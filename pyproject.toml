@@ -41,6 +41,18 @@ dependencies = [
     "playwright-stealth>=1.0.6"
 ]
 
+[tool.setuptools]
+packages = ["macho_gpt", "macho_gpt.core", "macho_gpt.rpa", "macho_gpt.utils"]
+py-modules = [
+    "whatsapp_executive_dashboard",
+    "simplified_whatsapp_app", 
+    "run_app",
+    "extract_whatsapp_auto"
+]
+
+[tool.setuptools.package-dir]
+"" = "."
+
 [tool.pyright.python]
 venvPath = "."
 venv = "venv" 

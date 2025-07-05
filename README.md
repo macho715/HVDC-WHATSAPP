@@ -1,100 +1,146 @@
-# 📱 WhatsApp 업무 요약 대시보드
+# 🤖 MACHO-GPT v3.4-mini WhatsApp 자동화 시스템
 
 **Samsung C&T Logistics · HVDC Project**  
-**MACHO-GPT v3.4-mini**
+**ADNOC·DSV Partnership**
 
-WhatsApp 채팅 내용을 자동으로 추출하고 AI 요약을 생성하는 멀티 프론트엔드 대시보드 시스템입니다.
+WhatsApp 채팅 내용을 자동으로 추출하고 AI 요약을 생성하는 지능형 물류 대시보드 시스템입니다.
 
-### 🎨 Multiple Frontend Options
-- **🐍 Streamlit**: Python 기반 즉시 사용 가능한 대시보드
-- **⚛️ React**: 모던 웹앱 UI/UX with Tailwind CSS  
-- **🔄 FastAPI**: React 연동을 위한 RESTful API 백엔드
+## 🎯 **현재 실행 중인 앱들**
+
+### ⭐ **Executive Dashboard** (포트 8505) - 추천
+- **파일**: `whatsapp_executive_dashboard.py`
+- **스타일**: Discord 스타일 UI
+- **기능**: Executive Summary + Bullet To-Do's
+- **접속**: http://localhost:8505
+
+### 🔧 **Simplified App** (포트 8506) - 안정 버전
+- **파일**: `simplified_whatsapp_app.py`
+- **스타일**: 기본 Streamlit UI
+- **기능**: 기본 요약 + 안정적 실행
+- **접속**: http://localhost:8506
+
+### 🚀 **통합 실행** (포트 8507) - 원클릭
+- **파일**: `run_app.py`
+- **스타일**: 자동 설정 + 데이터 정리
+- **기능**: 원클릭 실행 + 통합 대시보드
+- **접속**: http://localhost:8507
 
 ---
 
-## 🚀 주요 기능
+## 🚀 시스템 특징
 
-### 📊 핵심 기능
-- **자동 추출**: Playwright RPA를 통한 WhatsApp Web 자동 데이터 추출
-- **AI 요약**: OpenAI GPT-4o를 활용한 지능형 대화 요약
-- **긴급 분류**: 긴급/중요 키워드 자동 감지 및 하이라이트
-- **대시보드**: Streamlit 기반 직관적인 웹 인터페이스
-- **자동화**: 스케줄러를 통한 무인 자동 실행
+### 📊 **핵심 기능**
+- **Executive Summary**: DSV 팀 물류 작업 요약
+- **Bullet To-Do's**: 10개 주요 액션 아이템 자동 생성
+- **AI 요약**: OpenAI GPT-4o 기반 지능형 대화 분석
+- **자동화**: Playwright RPA를 통한 WhatsApp Web 자동 추출
+- **실시간 모니터링**: 시스템 상태 및 신뢰도 추적
 
-### 🔧 MACHO-GPT 통합
-- **다중 모드**: PRIME|ORACLE|ZERO|LATTICE|RHYTHM|COST-GUARD
-- **신뢰도 관리**: ≥0.90 신뢰도 보장
+### 🔧 **MACHO-GPT v3.4-mini 통합**
+- **6개 모드**: PRIME|ORACLE|ZERO|LATTICE|RHYTHM|COST-GUARD
+- **신뢰도 관리**: ≥0.90 신뢰도 보장 (현재 51.0%)
 - **자동 트리거**: KPI 기반 자동 모드 전환
 - **Fail-safe**: 오류 시 자동 ZERO 모드 전환
+- **물류 특화**: 컨테이너 배송, ADNOC 검사, 문서 준비 등
 
 ---
 
-## 📁 프로젝트 구조
+## 📁 **현재 프로젝트 구조**
 
 ```
 whatsapp/
-├── whatsapp_summary_app.py          # 메인 Streamlit 앱
-├── integration_api.py               # FastAPI 백엔드 서버
-├── run_macho_gpt.py                # 통합 시스템 런처
-├── extract_whatsapp_rpa.py          # RPA 통합 실행 스크립트
-├── requirements.txt                 # Python 패키지 의존성
-├── requirements_api.txt             # FastAPI 추가 의존성
-├── README.md                        # 프로젝트 문서
-├── 
-├── react_frontend/                  # React 프론트엔드
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── WhatsAppSummaryApp.jsx  # 메인 React 컴포넌트
-│   │   ├── services/
-│   │   │   └── api.js              # API 통신 서비스
-│   │   ├── App.js                  # React 앱 진입점
-│   │   └── index.js                # React DOM 렌더링
-│   ├── public/
-│   │   └── index.html              # HTML 템플릿
-│   ├── package.json                # Node.js 의존성
-│   ├── tailwind.config.js          # Tailwind CSS 설정
-│   └── README.md                   # React 프론트엔드 문서
+├── 🎯 핵심 실행 파일
+│   ├── whatsapp_executive_dashboard.py  # ⭐ Executive Dashboard (포트 8505)
+│   ├── simplified_whatsapp_app.py       # 🔧 Simplified App (포트 8506)
+│   ├── run_app.py                       # 🚀 통합 실행 (포트 8507)
+│   └── extract_whatsapp_auto.py         # 🤖 WhatsApp 자동화 + RPA
 │
-├── macho_gpt/
-│   ├── core/
-│   │   └── logi_whatsapp_241219.py  # WhatsApp 메시지 처리 모듈
-│   └── rpa/
-│       └── logi_rpa_whatsapp_241219.py  # RPA 자동화 모듈
+├── 📋 프로젝트 문서
+│   ├── README.md                        # 📖 프로젝트 설명서
+│   ├── START_HERE.md                    # 🚀 빠른 시작 가이드
+│   ├── PROJECT_SUMMARY.md               # 📊 프로젝트 요약
+│   ├── GITHUB_UPDATE_GUIDE.md           # 🔧 GitHub 업로드 가이드
+│   └── UPLOAD_NOW.md                    # ⚡ 즉시 업로드 방법
 │
-├── configs/
-│   └── config_prime_dev.yaml       # 설정 파일
+├── 🔧 시스템 설정
+│   ├── requirements.txt                 # 📦 Python 의존성
+│   ├── requirements_simple.txt          # 📦 최소 의존성
+│   ├── .gitignore                       # 🔐 보안 파일 제외
+│   └── pyproject.toml                   # ⚙️ 프로젝트 설정
 │
-├── logs/                           # 로그 파일
-├── data/                          # 데이터 파일
-└── templates/                     # 템플릿 파일
+├── 🤖 MACHO-GPT 모듈
+│   ├── macho_gpt/
+│   │   ├── __init__.py                  # 모듈 초기화
+│   │   ├── core/
+│   │   │   ├── logi_whatsapp_241219.py  # WhatsApp 메시지 처리
+│   │   │   ├── logi_workflow_241219.py  # 워크플로우 관리
+│   │   │   └── logi_ai_summarizer_241219.py  # AI 요약 엔진
+│   │   ├── rpa/
+│   │   │   └── logi_rpa_whatsapp_241219.py  # RPA 자동화
+│   │   └── utils/
+│   │       └── logi_logger_241219.py    # 로깅 시스템
+│
+├── 📊 데이터 및 설정
+│   ├── data/
+│   │   └── workflow_data.json           # 워크플로우 데이터
+│   ├── configs/
+│   │   └── config_prime_dev.yaml        # 설정 파일
+│   ├── templates/
+│   │   └── template_whatsapp_v1.json    # WhatsApp 템플릿
+│   └── .streamlit/
+│       └── config.toml                  # Streamlit 설정
+│
+├── 🧪 테스트 및 로그
+│   ├── tests/                           # 테스트 파일
+│   ├── logs/                           # 로그 파일
+│   └── reports/                        # 보고서 파일
+│
+└── 📱 React 프론트엔드 (옵션)
+    └── react_frontend/
+        ├── src/components/
+        ├── package.json
+        └── README.md
 ```
 
 ---
 
-## 🛠️ 설치 및 설정
+## 🛠️ **빠른 설치 및 실행**
 
-### 1. 환경 설정
+### ⚡ **즉시 실행 (추천)**
 
-#### Python 환경 (필수)
 ```bash
-# 프로젝트 클론
-git clone <repository-url>
-cd whatsapp
+# 1. 프로젝트 다운로드
+git clone https://github.com/macho715/HVDC-WHATSAPP.git
+cd HVDC-WHATSAPP
 
-# 파이썬 가상환경 생성 (권장)
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# venv\Scripts\activate   # Windows
+# 2. 기본 의존성 설치
+pip install -r requirements_simple.txt
 
-# Streamlit 의존성 설치
+# 3. 즉시 실행
+python run_app.py
+# 브라우저: http://localhost:8507
+```
+
+### 🔧 **전체 기능 설치**
+
+```bash
+# 전체 의존성 설치 (선택사항)
 pip install -r requirements.txt
 
-# FastAPI 의존성 설치 (React 사용 시)
-pip install -r requirements_api.txt
+# Playwright 브라우저 설치 (RPA 기능용)
+playwright install chromium
 
-# Playwright 브라우저 설치
-playwright install
+# Executive Dashboard 실행
+streamlit run whatsapp_executive_dashboard.py --server.port 8505
+# 브라우저: http://localhost:8505
 ```
+
+### 🎯 **현재 실행 상태**
+
+**✅ 실행 중인 앱들:**
+- **포트 8505**: Executive Dashboard (Discord 스타일)
+- **포트 8506**: Simplified App (안정 버전)
+- **포트 8507**: 통합 실행 (원클릭)
 
 #### React 환경 (선택)
 ```bash
@@ -132,68 +178,62 @@ mkdir -p logs data templates
 
 ---
 
-## 🚀 실행 방법
+## 🚀 **실행 방법**
 
-### 1. Streamlit 대시보드 (추천)
+### ⭐ **방법 1: Executive Dashboard (추천)**
 
 ```bash
-# Streamlit 앱 실행
-streamlit run whatsapp_summary_app.py
+# Discord 스타일 대시보드 실행
+streamlit run whatsapp_executive_dashboard.py --server.port 8505
 
-# 브라우저에서 http://localhost:8501 접속
+# 브라우저 접속: http://localhost:8505
 ```
 
-### 2. React 모던 대시보드 (신규)
+**특징:**
+- **Executive Summary**: DSV 팀 물류 작업 요약
+- **Bullet To-Do's**: 10개 주요 액션 아이템
+- **Discord 스타일 UI**: 사이드바 + 메인 콘텐츠
+- **실시간 모니터링**: 시스템 신뢰도 51.0%
+
+### 🔧 **방법 2: Simplified App (안정)**
 
 ```bash
-# FastAPI 서버 의존성 설치
-pip install -r requirements_api.txt
+# 기본 기능 중심 안정 버전
+streamlit run simplified_whatsapp_app.py --server.port 8506
 
-# 통합 런처로 React + FastAPI 실행
-python run_macho_gpt.py --mode react
-
-# 또는 개별 실행
-# 1) FastAPI 백엔드 (터미널 1)
-python integration_api.py
-
-# 2) React 프론트엔드 (터미널 2)
-cd react_frontend
-npm install
-npm start
-
-# 브라우저에서 접속:
-# - React: http://localhost:3000
-# - FastAPI: http://localhost:8502
-# - API Docs: http://localhost:8502/api/docs
+# 브라우저 접속: http://localhost:8506
 ```
 
-### 3. 통합 실행 (모든 서비스)
+**특징:**
+- **Mock 데이터 지원**: 의존성 없이 실행 가능
+- **기본 요약 기능**: AI 요약 + 워크플로우 관리
+- **안정적 실행**: 오류 시 graceful degradation
+
+### 🚀 **방법 3: 통합 실행 (원클릭)**
 
 ```bash
-# 모든 프론트엔드 동시 실행
-python run_macho_gpt.py --mode both
+# 원클릭 실행 + 자동 데이터 정리
+python run_app.py
 
-# 사용 가능한 URL:
-# - Streamlit: http://localhost:8501
-# - React: http://localhost:3000  
-# - FastAPI: http://localhost:8502
+# 브라우저 접속: http://localhost:8507
 ```
 
-### 4. RPA 자동화 실행
+**특징:**
+- **자동 설정**: 데이터 정리 + 의존성 확인
+- **통합 대시보드**: 모든 기능 한 번에
+- **원클릭 실행**: 복잡한 설정 불필요
+
+### 🤖 **WhatsApp 자동화**
 
 ```bash
-# 최초 실행 (인증 설정)
-python extract_whatsapp_rpa.py --mode PRIME
+# 최초 설정 (QR 코드 스캔)
+python extract_whatsapp_auto.py --setup
 
-# 스케줄러 실행
-python extract_whatsapp_rpa.py --scheduled --report
-```
+# 자동 추출 실행
+python extract_whatsapp_auto.py --run
 
-### 5. 개발 모드 실행
-
-```bash
-# 설정 파일 지정
-python extract_whatsapp_rpa.py --config configs/config_prime_dev.yaml --mode LATTICE
+# 스케줄링 설정
+python extract_whatsapp_auto.py --schedule daily
 ```
 
 ---
@@ -441,5 +481,37 @@ pre-commit install
 
 ---
 
-*마지막 업데이트: 2024-12-19*  
-*MACHO-GPT v3.4-mini · Samsung C&T Logistics · HVDC Project* 
+## 🌟 **현재 시스템 상태**
+
+### ✅ **실행 중인 서비스**
+- **포트 8505**: Executive Dashboard ⭐ (Discord 스타일)
+- **포트 8506**: Simplified App 🔧 (안정 버전)  
+- **포트 8507**: 통합 실행 🚀 (원클릭)
+
+### 📊 **시스템 KPI**
+- **신뢰도**: 51.0% (목표: ≥90%)
+- **현재 모드**: 🔴 ZERO (안전 모드)
+- **총 대화방**: 5개
+- **완료율**: 진행 중...
+- **상태**: ⚠️ 2차 트리거 대기
+
+### 🎯 **추천 명령어**
+```bash
+/workflow_optimization    # 워크플로우 최적화
+/room_health_check       # 대화방 상태 점검  
+/task_prioritization     # 작업 우선순위 조정
+```
+
+---
+
+## 📞 **지원 및 문의**
+
+- **GitHub Repository**: https://github.com/macho715/HVDC-WHATSAPP
+- **프로젝트**: Samsung C&T Logistics · HVDC Project
+- **AI 시스템**: MACHO-GPT v3.4-mini
+- **파트너십**: ADNOC·DSV Partnership
+
+---
+
+*마지막 업데이트: 2025-07-05*  
+*MACHO-GPT v3.4-mini · Samsung C&T Logistics · HVDC Project · ADNOC·DSV Partnership* 
