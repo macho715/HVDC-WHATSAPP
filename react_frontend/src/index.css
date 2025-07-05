@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MACHO-GPT v3.4-mini Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f9fafb;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* MACHO-GPT Custom Components */
+.macho-gpt-container {
+  @apply max-w-6xl mx-auto px-4;
+}
+
+.macho-gpt-card {
+  @apply bg-white rounded-lg shadow-lg p-6 border border-gray-200;
+}
+
+.macho-gpt-button {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center;
+}
+
+.macho-gpt-button-primary {
+  @apply bg-blue-500 text-white hover:bg-blue-600;
+}
+
+.macho-gpt-button-success {
+  @apply bg-green-500 text-white hover:bg-green-600;
+}
+
+.macho-gpt-button-warning {
+  @apply bg-yellow-500 text-white hover:bg-yellow-600;
+}
+
+.macho-gpt-button-danger {
+  @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+.macho-gpt-mode-prime {
+  @apply bg-blue-500 text-white;
+}
+
+.macho-gpt-mode-oracle {
+  @apply bg-purple-500 text-white;
+}
+
+.macho-gpt-mode-zero {
+  @apply bg-gray-500 text-white;
+}
+
+.macho-gpt-mode-lattice {
+  @apply bg-green-500 text-white;
+}
+
+.macho-gpt-mode-rhythm {
+  @apply bg-yellow-500 text-white;
+}
+
+.macho-gpt-mode-cost-guard {
+  @apply bg-red-500 text-white;
+}
+
+/* Loading Animation */
+.macho-gpt-loading {
+  @apply animate-pulse;
+}
+
+.macho-gpt-spinner {
+  @apply animate-spin rounded-full border-2 border-gray-300 border-t-blue-500;
+}
+
+/* Confidence Indicators */
+.confidence-high {
+  @apply bg-green-100 text-green-800 border border-green-200;
+}
+
+.confidence-medium {
+  @apply bg-yellow-100 text-yellow-800 border border-yellow-200;
+}
+
+.confidence-low {
+  @apply bg-red-100 text-red-800 border border-red-200;
+}
+
+/* Priority Indicators */
+.priority-critical {
+  @apply bg-red-100 text-red-800 border-l-4 border-red-500;
+}
+
+.priority-urgent {
+  @apply bg-orange-100 text-orange-800 border-l-4 border-orange-500;
+}
+
+.priority-high {
+  @apply bg-yellow-100 text-yellow-800 border-l-4 border-yellow-500;
+}
+
+.priority-normal {
+  @apply bg-green-100 text-green-800 border-l-4 border-green-500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .macho-gpt-container {
+    @apply px-2;
+  }
+  
+  .macho-gpt-card {
+    @apply p-4;
+  }
+} 

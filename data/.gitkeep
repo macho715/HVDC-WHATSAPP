@@ -1,0 +1,5 @@
+# 데이터 디렉터리 유지용 파일  
+# WhatsApp 요약 데이터가 이 폴더에 저장됩니다
+# - summaries.json (메인 DB)
+# - backup files
+# - export files (CSV, Excel) 

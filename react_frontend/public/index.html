@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="MACHO-GPT v3.4-mini WhatsApp Summary Dashboard - HVDC Project Integration"
+    />
+    <meta name="keywords" content="MACHO-GPT, WhatsApp, Summary, AI, Logistics, Samsung C&T, HVDC" />
+    <meta name="author" content="MACHO-GPT v3.4-mini" />
+    
+    <!-- Samsung C&T Branding -->
+    <meta name="theme-color" content="#1428a0" />
+    <meta name="msapplication-navbutton-color" content="#1428a0" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="#1428a0" />
+    
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="MACHO-GPT v3.4-mini WhatsApp Summary Dashboard" />
+    <meta property="og:description" content="AI-powered WhatsApp business summary system for logistics operations" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MACHO-GPT" />
+    
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MACHO-GPT v3.4-mini WhatsApp Summary Dashboard" />
+    <meta name="twitter:description" content="AI-powered WhatsApp business summary system for logistics operations" />
+    
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="%PUBLIC_URL%/static/js/main.js" as="script">
+    <link rel="preload" href="%PUBLIC_URL%/static/css/main.css" as="style">
+    
+    <title>MACHO-GPT v3.4-mini | WhatsApp Summary Dashboard</title>
+    
+    <!-- MACHO-GPT System Check -->
+    <script>
+      // Basic system compatibility check
+      window.MACHO_GPT_CONFIG = {
+        version: '3.4-mini',
+        project: 'HVDC_SAMSUNG_CT',
+        mode: 'PRIME',
+        debug: false
+      };
+      
+      // Check for required features
+      if (!window.fetch || !window.Promise) {
+        console.error('MACHO-GPT: Browser not supported');
+        document.write('<div style="text-align:center;padding:50px;font-family:Arial,sans-serif;"><h2>브라우저가 지원되지 않습니다</h2><p>Chrome, Firefox, Safari, Edge 브라우저를 사용해주세요.</p></div>');
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <div style="text-align:center;padding:50px;font-family:Arial,sans-serif;">
+        <h2>JavaScript가 필요합니다</h2>
+        <p>MACHO-GPT v3.4-mini를 사용하려면 JavaScript를 활성화해주세요.</p>
+      </div>
+    </noscript>
+    
+    <!-- MACHO-GPT Loading Screen -->
+    <div id="macho-gpt-loader" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1428a0 0%, #3b82f6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      flex-direction: column;
+    ">
+      <div style="
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255,255,255,0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      "></div>
+      <h2 style="margin: 0; font-weight: 600; font-size: 24px;">MACHO-GPT v3.4-mini</h2>
+      <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 14px;">시스템 초기화 중...</p>
+    </div>
+    
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
+    
+    <div id="root"></div>
+    
+    <!-- Hide loader when React app loads -->
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const loader = document.getElementById('macho-gpt-loader');
+          if (loader) {
+            loader.style.opacity = '0';
+            loader.style.transition = 'opacity 0.5s ease-out';
+            setTimeout(() => loader.style.display = 'none', 500);
+          }
+        }, 1000);
+      });
+    </script>
+  </body>
+</html> 

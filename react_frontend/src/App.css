@@ -1,0 +1,93 @@
+/* MACHO-GPT v3.4-mini App Styles */
+.App {
+  text-align: left;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+/* MACHO-GPT Specific Animations */
+@keyframes machoGptFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.macho-gpt-fade-in {
+  animation: machoGptFadeIn 0.5s ease-out;
+}
+
+@keyframes machoGptPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.macho-gpt-pulse {
+  animation: machoGptPulse 2s infinite;
+}
+
+/* Status Indicators */
+.status-active {
+  color: #10b981;
+}
+
+.status-warning {
+  color: #f59e0b;
+}
+
+.status-error {
+  color: #ef4444;
+}
+
+/* Mode Specific Styles */
+.mode-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 1000;
+}
+
+/* Confidence Bar */
+.confidence-bar {
+  height: 4px;
+  background-color: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.confidence-fill.high {
+  background-color: #10b981;
+}
+
+.confidence-fill.medium {
+  background-color: #f59e0b;
+}
+
+.confidence-fill.low {
+  background-color: #ef4444;
+} 
