@@ -14,14 +14,15 @@ Samsung C&T Logistics · HVDC Project
 from __future__ import annotations
 
 import re
-from datetime import datetime
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class WhatsAppMessage:
     """WhatsApp 메시지 구조체"""
+
     timestamp: datetime
     sender: str
     content: str

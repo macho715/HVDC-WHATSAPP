@@ -53,12 +53,14 @@ HVDC-WHATSAPP/
 │   │   ├── core/                          # 핵심 처리 모듈
 │   │   │   ├── logi_workflow_241219.py    # 워크플로우 관리
 │   │   │   ├── logi_whatsapp_241219.py    # WhatsApp 처리
-│   │   │   └── logi_ai_summarizer_241219.py # AI 요약
+│   │   │   ├── logi_ai_summarizer_241219.py # AI 요약
+│   │   │   └── role_config.py             # 🆕 Role Configuration
 │   │   └── rpa/                           # 자동화 모듈
 │   │       └── logi_rpa_whatsapp_241219.py
 ├── 📊 **데이터 & 설정**
 │   ├── data/workflow_data.json            # 워크플로우 데이터
 │   ├── configs/                           # 설정 파일
+│   │   └── role_config.yaml               # 🆕 Role Configuration 설정
 │   ├── templates/                         # 템플릿 파일
 │   └── auth.json                          # WhatsApp 인증 정보
 ├── 📋 **의존성 & 설정**
@@ -90,6 +92,13 @@ HVDC-WHATSAPP/
 - 📊 KPI 자동 분석
 - 🎯 우선순위 자동 설정
 - 💡 업무 개선 제안
+
+### 🛠️ **NEW: Role Configuration (v3.4-mini)**
+- 🎯 **시스템 프롬프트 자동 역할 주입**
+- 🌍 **환경별 역할 설정 (dev/staging/prod)**
+- 🔄 **모드별 최적화 (PRIME|ORACLE|ZERO|LATTICE|RHYTHM|COST-GUARD)**
+- 🏢 **Samsung C&T Logistics HVDC 프로젝트 컨텍스트 자동 적용**
+- ✅ **일관된 AI 응답 보장 (신뢰도 ≥0.90)**
 
 ## 🎨 사용자 인터페이스
 

@@ -1,7 +1,7 @@
 {
   "chat_rooms": [
     {
-      "id": "d41d8aaa-29ef-450f-8a1e-2084224504ff",
+      "id": "4778885a-2e22-4754-90c1-38a7295f7c36",
       "name": "마케팅팀",
       "type": "team",
       "members": [
@@ -20,15 +20,15 @@
       "parent_room_id": null,
       "child_room_ids": [],
       "connected_tasks": [
-        "9893dca1-7ae2-4584-b76d-be812e104d90"
+        "40c96720-1f27-4c9b-b42a-b0e998e6ac41"
       ],
       "priority": "medium",
-      "last_activity": "2025-07-05T13:18:37.167567",
+      "last_activity": "2025-07-05T17:20:37.275533",
       "confidence": 0.9,
       "auto_archive_days": 30
     },
     {
-      "id": "be03125b-705b-4b2b-b5e3-1b973feb7fde",
+      "id": "57e00bfc-f426-4fe5-98a9-2a7e03d33c4f",
       "name": "개발팀",
       "type": "team",
       "members": [
@@ -47,15 +47,15 @@
       "parent_room_id": null,
       "child_room_ids": [],
       "connected_tasks": [
-        "46380e55-ccf1-4820-8c03-e1e9e24d6e4c"
+        "d7f73871-ac43-408b-95e5-bb9d97aaeb74"
       ],
       "priority": "high",
-      "last_activity": "2025-07-05T13:18:37.167567",
+      "last_activity": "2025-07-05T17:20:37.277654",
       "confidence": 0.9,
       "auto_archive_days": 30
     },
     {
-      "id": "d8d6927b-9fd8-4c06-a8b1-dd8fe076aae4",
+      "id": "5eae7191-b76c-48f9-a874-04e687ce6da0",
       "name": "디자인팀",
       "type": "team",
       "members": [
@@ -75,12 +75,12 @@
       "child_room_ids": [],
       "connected_tasks": [],
       "priority": "medium",
-      "last_activity": "2025-07-05T13:18:37.177067",
+      "last_activity": "2025-07-05T17:20:37.279115",
       "confidence": 0.9,
       "auto_archive_days": 30
     },
     {
-      "id": "7d39891a-bcbb-492c-9dfd-a98f27838893",
+      "id": "06a7b146-d039-4de6-9ab0-a0436737cc3b",
       "name": "영업팀",
       "type": "team",
       "members": [
@@ -100,12 +100,12 @@
       "child_room_ids": [],
       "connected_tasks": [],
       "priority": "urgent",
-      "last_activity": "2025-07-05T13:18:37.177067",
+      "last_activity": "2025-07-05T17:20:37.279115",
       "confidence": 0.9,
       "auto_archive_days": 30
     },
     {
-      "id": "0de48670-f2ff-4237-8226-5ec5568fd161",
+      "id": "5f073ef3-2cc2-4360-94d7-2b6139b96ddf",
       "name": "경영진",
       "type": "meeting",
       "members": [
@@ -125,12 +125,12 @@
       "child_room_ids": [],
       "connected_tasks": [],
       "priority": "critical",
-      "last_activity": "2025-07-05T13:18:37.177067",
+      "last_activity": "2025-07-05T17:20:37.280422",
       "confidence": 0.9,
       "auto_archive_days": 30
     },
     {
-      "id": "82809f42-8abd-4965-8b70-e85b39c51a72",
+      "id": "46a47837-9e6a-4fc1-8ae5-052f6dc7f390",
       "name": "HVDC 프로젝트",
       "type": "project",
       "members": [
@@ -151,22 +151,22 @@
       "child_room_ids": [],
       "connected_tasks": [],
       "priority": "medium",
-      "last_activity": "2025-07-05T13:18:37.177067",
+      "last_activity": "2025-07-05T17:20:37.280422",
       "confidence": 0.9,
       "auto_archive_days": 30
     }
   ],
   "tasks": [
     {
-      "id": "9893dca1-7ae2-4584-b76d-be812e104d90",
+      "id": "40c96720-1f27-4c9b-b42a-b0e998e6ac41",
       "title": "신규 캠페인 기획",
       "description": "Q1 신규 제품 런칭을 위한 마케팅 캠페인 기획 및 실행",
       "status": "pending",
       "priority": "high",
       "assignee": "김민수",
       "created_by": "system",
-      "chat_room_id": "d41d8aaa-29ef-450f-8a1e-2084224504ff",
-      "due_date": "2025-07-19T13:18:37.177067",
+      "chat_room_id": "4778885a-2e22-4754-90c1-38a7295f7c36",
+      "due_date": "2025-07-19T17:20:37.281924",
       "dependencies": [],
       "tags": [
         "campaign",
@@ -175,19 +175,19 @@
       ],
       "progress": 0.0,
       "confidence": 0.85,
-      "created_at": "2025-07-05T13:18:37.177067",
-      "updated_at": "2025-07-05T13:18:37.177067"
+      "created_at": "2025-07-05T17:20:37.281924",
+      "updated_at": "2025-07-05T17:20:37.281924"
     },
     {
-      "id": "46380e55-ccf1-4820-8c03-e1e9e24d6e4c",
+      "id": "d7f73871-ac43-408b-95e5-bb9d97aaeb74",
       "title": "시스템 성능 최적화",
       "description": "대시보드 응답 시간 개선 및 데이터베이스 쿼리 최적화",
       "status": "pending",
       "priority": "medium",
       "assignee": "정수민",
       "created_by": "system",
-      "chat_room_id": "be03125b-705b-4b2b-b5e3-1b973feb7fde",
-      "due_date": "2025-07-12T13:18:37.177067",
+      "chat_room_id": "57e00bfc-f426-4fe5-98a9-2a7e03d33c4f",
+      "due_date": "2025-07-12T17:20:37.283939",
       "dependencies": [],
       "tags": [
         "optimization",
@@ -196,13 +196,13 @@
       ],
       "progress": 0.0,
       "confidence": 0.85,
-      "created_at": "2025-07-05T13:18:37.177067",
-      "updated_at": "2025-07-05T13:18:37.177067"
+      "created_at": "2025-07-05T17:20:37.283939",
+      "updated_at": "2025-07-05T17:20:37.283939"
     }
   ],
   "metadata": {
     "version": "3.4-mini",
-    "last_updated": "2025-07-05T13:18:37.182555",
+    "last_updated": "2025-07-05T17:20:37.285002",
     "total_rooms": 6,
     "total_tasks": 2
   }

@@ -1,31 +1,39 @@
 """
 MACHO-GPT v3.4-mini - AI Summarizer Module
 Samsung C&T Logistics · HVDC Project Integration
+Enhanced with Role Configuration Support
 """
 
 import openai
 import logging
 from typing import Dict, List, Any
 from datetime import datetime
+from .role_config import get_enhanced_system_prompt, create_system_message, get_role_status
 
 logger = logging.getLogger(__name__)
 
 class LogiAISummarizer:
-    """MACHO-GPT AI 요약 처리기"""
+    """MACHO-GPT AI 요약 처리기 (Role Configuration 통합)"""
     
-    def __init__(self, api_key: str = None, model: str = "gpt-4o-mini"):
+    def __init__(self, api_key: str = None, model: str = "gpt-4o-mini", mode: str = "PRIME"):
         """
         AI 요약 처리기 초기화
         
         Args:
             api_key: OpenAI API 키
             model: 사용할 모델 (기본값: gpt-4o-mini)
+            mode: 동작 모드 (PRIME|ORACLE|ZERO|LATTICE|RHYTHM|COST-GUARD)
         """
         self.model = model
+        self.mode = mode
         self.confidence_threshold = 0.90
         
         if api_key:
             openai.api_key = api_key
+        
+        # Role configuration 상태 로깅
+        role_status = get_role_status()
+        logger.info(f"✅ LogiAISummarizer 초기화 - Mode: {mode}, Role: {role_status['environment']}")
     
     def summarize_conversation(self, messages: List[str]) -> Dict[str, Any]:
         """
@@ -41,11 +49,12 @@ class LogiAISummarizer:
             # 메시지 전처리
             conversation_text = "\n".join(messages)
             
-            # OpenAI API 호출
+            # OpenAI API 호출 (Role Configuration 통합)
+            system_message = create_system_message(self._get_task_prompt(), self.mode)
             response = openai.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": self._get_system_prompt()},
+                    system_message,
                     {"role": "user", "content": conversation_text}
                 ],
                 temperature=0.3,
@@ -70,11 +79,9 @@ class LogiAISummarizer:
                 "error": str(e)
             }
     
-    def _get_system_prompt(self) -> str:
-        """시스템 프롬프트 생성"""
+    def _get_task_prompt(self) -> str:
+        """태스크별 프롬프트 생성 (Role Configuration과 함께 사용)"""
         return """
-        당신은 MACHO-GPT v3.4-mini, Samsung C&T 물류 전문 AI입니다.
-        
         WhatsApp 대화를 분석하여 다음을 추출하세요:
         1. 핵심 요약 (3-5줄)
         2. 실행 가능한 태스크 목록
@@ -96,6 +103,7 @@ class LogiAISummarizer:
         - [중요 사항]
         
         물류, HVDC 프로젝트, 업무 관련 내용을 우선적으로 분석하세요.
+        ADNOC·DSV 파트너십 관련 내용과 계약/통관 사항을 특히 주의 깊게 처리하세요.
         """
     
     def _parse_response(self, response_text: str) -> Dict[str, List[str]]:
@@ -170,12 +178,15 @@ class LogiAISummarizer:
         return min(score, 1.0)
     
     def get_status(self) -> Dict[str, Any]:
-        """처리기 상태 정보 반환"""
+        """처리기 상태 정보 반환 (Role Configuration 통합)"""
+        role_status = get_role_status()
         return {
             "model": self.model,
+            "mode": self.mode,
             "confidence_threshold": self.confidence_threshold,
             "status": "ready",
-            "version": "3.4-mini"
+            "version": "3.4-mini",
+            "role_config": role_status
         }
 
 # 전역 인스턴스 생성
