@@ -1,0 +1,87 @@
+# 🔐 MACHO-GPT v3.4-mini Security & Performance Exclusions
+
+# 🚨 보안 민감 파일들
+auth.json
+*.key
+*.pem
+*.env
+config_*.yaml
+secrets/
+
+# 🐍 Python 캐시 및 빌드 파일
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 📊 로그 및 임시 파일
+logs/
+*.log
+*.tmp
+*.temp
+temp/
+.temp/
+
+# 💻 IDE 및 에디터 파일
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 📱 OS 생성 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 🌐 웹 브라우저 관련
+*.crx
+*.xpi
+
+# 📦 의존성 디렉토리
+node_modules/
+bower_components/
+
+# 🎯 특정 프로젝트 파일
+summaries_backup.json
+workflow_data_backup.json
+test_results/
+screenshots/
+*.backup
+
+# 📱 Playwright 브라우저 파일
+.playwright/
+
+# 🔧 Streamlit 캐시
+.streamlit/
+
+# 📄 대용량 파일 (100MB 이상)
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 🚀 배포 관련
+.deploy/
+.github/workflows/ 

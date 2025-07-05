@@ -1,0 +1,24 @@
+# WhatsApp Summary Dashboard - Requirements
+# Samsung C&T Logistics HVDC Project
+# MACHO-GPT v3.4-mini
+
+# Core Framework
+streamlit>=1.28.0
+pandas>=1.5.0
+numpy>=1.24.0
+
+# AI and NLP
+openai>=1.3.0
+
+# Data Processing
+pyyaml>=6.0.1
+python-dateutil>=2.8.2
+
+# RPA and Web Automation (optional for basic functionality)
+# playwright>=1.40.0
+
+# File and Data Handling
+jsonschema>=4.19.0
+
+# Configuration and Environment
+python-dotenv>=1.0.0 
