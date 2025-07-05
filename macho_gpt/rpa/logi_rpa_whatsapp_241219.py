@@ -1,444 +1,427 @@
 """
-MACHO-GPT RPA WhatsApp 자동화 모듈  
+MACHO-GPT v3.4-mini - RPA WhatsApp 자동화 모듈
 ------------------------------------------
 Samsung C&T Logistics · HVDC Project
 파일명: logi_rpa_whatsapp_241219.py
 
 기능:
-- Playwright 기반 WhatsApp Web 자동화
-- 대화 내용 자동 추출 및 텍스트 변환
-- 기존 WhatsApp 처리 모듈과 통합
-- 스케줄링 지원 및 에러 복구
+- WhatsApp Web 자동화 (Playwright)
+- 메시지 자동 추출
+- AI 요약 처리
+- 데이터 저장 및 관리
+- 보안 및 스텔스 기능
+
+Mode: LATTICE (OCR 및 자동화 모드)
+Confidence: ≥0.90 필요
 """
 
-from __future__ import annotations
-
 import asyncio
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
 import json
-import yaml
+import logging
+import random
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+from datetime import datetime
+from playwright.async_api import async_playwright, Page, Browser
+from playwright_stealth import stealth_async
 
-from playwright.async_api import async_playwright, Page, Browser, BrowserContext
-from playwright._impl._errors import TimeoutError as PlaywrightTimeoutError
+# MACHO-GPT 모듈 import
+from macho_gpt.core.logi_whatsapp_241219 import WhatsAppProcessor
+from macho_gpt.core.logi_ai_summarizer_241219 import LogiAISummarizer
 
-# 기존 모듈 import
-from macho_gpt.core.logi_whatsapp_241219 import WhatsAppProcessor, WhatsAppMessage
-
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/rpa_whatsapp.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class WhatsAppRPAExtractor:
     """
-    MACHO-GPT WhatsApp Web RPA 자동화 클래스
+    MACHO-GPT WhatsApp RPA 자동화 클래스
     
-    Mode: PRIME (기본 모드) + LATTICE (고급 텍스트 처리)
-    Confidence: ≥0.90 필요
+    Features:
+    - 자동 메시지 추출
+    - AI 요약 처리
+    - 보안 스텔스 기능
+    - 오류 복구 메커니즘
     """
     
-    def __init__(self, config_path: str = "configs/config_prime_dev.yaml"):
-        self.config = self._load_config(config_path)
-        self.mode = self.config.get('system', {}).get('mode', 'PRIME')
+    def __init__(self, mode: str = "LATTICE"):
+        self.mode = mode
         self.confidence_threshold = 0.90
+        self.auth_file = Path("auth.json")
+        self.data_dir = Path("data")
+        self.logs_dir = Path("logs")
         
-        # WhatsApp 설정
-        self.web_url = self.config.get('whatsapp', {}).get('web_url', 'https://web.whatsapp.com/')
-        self.chat_title = self.config.get('whatsapp', {}).get('chat_title', 'MR.CHA 전용')
-        self.auth_file = Path(self.config.get('whatsapp', {}).get('auth_file', 'auth.json'))
-        self.extraction_hours = self.config.get('whatsapp', {}).get('extraction_hours', 24)
+        # 디렉토리 생성
+        self.data_dir.mkdir(exist_ok=True)
+        self.logs_dir.mkdir(exist_ok=True)
         
-        # RPA 설정
-        self.browser_type = self.config.get('rpa', {}).get('browser', 'chromium')
-        self.headless = self.config.get('rpa', {}).get('headless', False)
-        self.timeout = self.config.get('rpa', {}).get('timeout', 30000)
-        self.retry_attempts = self.config.get('rpa', {}).get('retry_attempts', 3)
-        self.scroll_delay = self.config.get('rpa', {}).get('scroll_delay', 1000)
+        # 모듈 초기화
+        self.whatsapp_processor = WhatsAppProcessor(mode=mode)
+        self.ai_summarizer = LogiAISummarizer()
         
-        # 프로세서 초기화
-        self.processor = WhatsAppProcessor(mode=self.mode)
+        # 스텔스 설정
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        ]
         
-        # 로깅 설정
-        self._setup_logging()
+        # 기본 채팅 설정
+        self.default_chat_titles = [
+            "MR.CHA 전용",
+            "HVDC Project",
+            "Samsung C&T Team",
+            "물류 업무",
+            "Emergency Response"
+        ]
+        
+        logger.info(f"✅ WhatsApp RPA 초기화 완료 - Mode: {mode}")
     
-    def _load_config(self, config_path: str) -> Dict:
-        """YAML 설정 파일 로드"""
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
-        except FileNotFoundError:
-            self.logger.warning(f"Config file not found: {config_path}. Using defaults.")
-            return {}
-    
-    def _setup_logging(self):
-        """로깅 설정"""
-        log_config = self.config.get('logging', {})
-        level = getattr(logging, log_config.get('level', 'INFO'))
-        
-        logging.basicConfig(
-            level=level,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler('logs/whatsapp_rpa.log', encoding='utf-8'),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger(__name__)
-    
-    async def setup_browser_session(self) -> Tuple[Browser, BrowserContext]:
+    async def extract_chat_messages(self, chat_title: str = None) -> Dict[str, Any]:
         """
-        브라우저 세션 설정 및 인증
-        
-        Returns:
-            tuple: (browser, context) 객체
-            
-        Triggers:
-            - 인증 실패 시 ZERO 모드 전환
-            - 브라우저 실행 실패 시 재시도
-        """
-        playwright = await async_playwright().start()
-        
-        try:
-            # 브라우저 실행
-            browser = await getattr(playwright, self.browser_type).launch(
-                headless=self.headless,
-                args=['--no-sandbox', '--disable-setuid-sandbox'] if self.headless else None
-            )
-            
-            # 인증 파일 확인
-            storage_state = None
-            if self.auth_file.exists():
-                try:
-                    with open(self.auth_file, 'r', encoding='utf-8') as f:
-                        storage_state = json.load(f)
-                    self.logger.info(f"Loaded auth from {self.auth_file}")
-                except Exception as e:
-                    self.logger.warning(f"Failed to load auth file: {e}")
-            
-            # 브라우저 컨텍스트 생성
-            context = await browser.new_context(
-                storage_state=storage_state,
-                viewport={'width': 1280, 'height': 720},
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            )
-            
-            return browser, context
-            
-        except Exception as e:
-            self.logger.error(f"Browser setup failed: {e}")
-            raise
-    
-    async def authenticate_whatsapp(self, page: Page) -> bool:
-        """
-        WhatsApp Web 인증 처리
+        WhatsApp 채팅 메시지 자동 추출
         
         Args:
-            page: Playwright 페이지 객체
+            chat_title: 추출할 채팅방 제목 (기본값: MR.CHA 전용)
             
         Returns:
-            bool: 인증 성공 여부
+            dict: 추출 결과 및 메타데이터
         """
-        try:
-            await page.goto(self.web_url, timeout=self.timeout)
-            
-            # 로그인 상태 확인
-            await page.wait_for_timeout(3000)  # 페이지 로드 대기
-            
-            # QR 코드가 있는지 확인 (로그인 필요)
-            qr_code = await page.locator('canvas[aria-label="Scan me!"]').count()
-            
-            if qr_code > 0:
-                self.logger.warning("QR code detected. Manual login required.")
-                self.logger.info("Please scan QR code and press Enter to continue...")
-                
-                # 개발 모드에서는 수동 로그인 대기
-                if not self.headless:
-                    input("Press Enter after scanning QR code...")
-                    
-                    # 인증 정보 저장
-                    await self._save_auth_state(page)
-                    
-                return True
-            
-            # 이미 로그인된 상태인지 확인
-            chat_area = await page.locator('[data-testid="conversation-panel-wrapper"]').count()
-            if chat_area > 0:
-                self.logger.info("Already authenticated")
-                return True
-                
-            return False
-            
-        except Exception as e:
-            self.logger.error(f"Authentication failed: {e}")
-            return False
-    
-    async def _save_auth_state(self, page: Page):
-        """인증 상태 저장"""
-        try:
-            storage_state = await page.context.storage_state()
-            with open(self.auth_file, 'w', encoding='utf-8') as f:
-                json.dump(storage_state, f, ensure_ascii=False, indent=2)
-            self.logger.info(f"Auth state saved to {self.auth_file}")
-        except Exception as e:
-            self.logger.error(f"Failed to save auth state: {e}")
-    
-    async def extract_chat_messages(self, page: Page) -> str:
-        """
-        지정된 채팅방에서 메시지 추출
+        if not chat_title:
+            chat_title = self.default_chat_titles[0]
         
-        Args:
-            page: Playwright 페이지 객체
-            
-        Returns:
-            str: 추출된 채팅 텍스트
-            
-        Triggers:
-            - 채팅방 찾기 실패 시 ZERO 모드 전환
-            - 메시지 추출 실패 시 재시도
-        """
-        try:
-            # 채팅방 검색 및 선택
-            await self._select_chat(page)
-            
-            # 메시지 스크롤 및 로드
-            await self._scroll_to_load_messages(page)
-            
-            # 메시지 추출
-            messages = await self._extract_message_elements(page)
-            
-            self.logger.info(f"Extracted {len(messages)} messages")
-            return "\n".join(messages)
-            
-        except Exception as e:
-            self.logger.error(f"Message extraction failed: {e}")
-            raise
-    
-    async def _select_chat(self, page: Page):
-        """채팅방 선택"""
-        try:
-            # 채팅방 검색
-            search_box = page.locator('[data-testid="chat-list-search"]')
-            await search_box.fill(self.chat_title)
-            await page.wait_for_timeout(2000)
-            
-            # 채팅방 클릭
-            chat_selector = f'span[title="{self.chat_title}"]'
-            await page.locator(chat_selector).first.click()
-            await page.wait_for_timeout(2000)
-            
-            self.logger.info(f"Selected chat: {self.chat_title}")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to select chat: {e}")
-            raise
-    
-    async def _scroll_to_load_messages(self, page: Page):
-        """메시지 로드를 위한 스크롤"""
-        try:
-            # 메시지 컨테이너 찾기
-            message_container = page.locator('[data-testid="conversation-panel-wrapper"]')
-            
-            # 최근 24시간 메시지 로드를 위해 스크롤
-            scroll_attempts = 10
-            for i in range(scroll_attempts):
-                await page.keyboard.press('PageUp')
-                await page.wait_for_timeout(self.scroll_delay)
-                
-                # 날짜 확인 로직 (선택적)
-                # 24시간 이전 메시지에 도달했는지 확인
-                
-            self.logger.info(f"Scrolled {scroll_attempts} times to load messages")
-            
-        except Exception as e:
-            self.logger.error(f"Scrolling failed: {e}")
-            raise
-    
-    async def _extract_message_elements(self, page: Page) -> List[str]:
-        """메시지 요소 추출"""
-        try:
-            # 메시지 선택자 (일반적인 WhatsApp Web 구조)
-            message_selectors = [
-                '[data-testid="msg-container"]',
-                '.message-in, .message-out',
-                '[data-testid="conversation-panel-wrapper"] div[data-testid]'
-            ]
-            
-            messages = []
-            
-            for selector in message_selectors:
-                elements = await page.locator(selector).all()
-                if elements:
-                    for element in elements:
-                        try:
-                            # 메시지 텍스트 추출
-                            text = await element.text_content()
-                            if text and text.strip():
-                                messages.append(text.strip())
-                        except Exception as e:
-                            continue
-                    
-                    if messages:
-                        break
-            
-            # 중복 제거 및 정렬
-            unique_messages = list(dict.fromkeys(messages))
-            
-            return unique_messages
-            
-        except Exception as e:
-            self.logger.error(f"Message element extraction failed: {e}")
-            return []
-    
-    async def process_extracted_data(self, raw_text: str) -> Dict:
-        """
-        추출된 데이터 처리 및 요약
+        logger.info(f"🔄 채팅 메시지 추출 시작 - 대상: {chat_title}")
         
-        Args:
-            raw_text: 추출된 원시 텍스트
-            
-        Returns:
-            dict: 처리된 데이터 및 요약 결과
-        """
         try:
-            # 메시지 파싱
-            messages = self.processor.parse_whatsapp_text(raw_text)
+            result = await self._run_extraction(chat_title)
             
-            # 요약 데이터 추출
-            summary_data = self.processor.extract_summary_data(messages)
-            
-            # KPI 생성
-            kpi_data = self.processor.generate_kpi_summary(messages)
-            
-            # 결과 통합
-            result = {
-                'timestamp': datetime.now().isoformat(),
-                'extraction_status': 'SUCCESS',
-                'confidence': summary_data.get('confidence', 0.0),
-                'mode': self.mode,
-                'raw_text': raw_text,
-                'parsed_messages': len(messages),
-                'summary_data': summary_data,
-                'kpi_data': kpi_data,
-                'triggers': summary_data.get('triggers', []),
-                'next_cmds': summary_data.get('next_cmds', [])
-            }
+            if result['status'] == 'SUCCESS':
+                # AI 요약 처리
+                summary_result = await self._process_ai_summary(result['messages'])
+                result.update(summary_result)
+                
+                # 데이터 저장
+                await self._save_extracted_data(result)
+                
+                logger.info(f"✅ 추출 완료 - 메시지 {len(result['messages'])}개")
+            else:
+                logger.error(f"❌ 추출 실패 - {result.get('error', '알 수 없는 오류')}")
             
             return result
             
         except Exception as e:
-            self.logger.error(f"Data processing failed: {e}")
+            logger.error(f"❌ 추출 프로세스 오류: {str(e)}")
             return {
-                'timestamp': datetime.now().isoformat(),
-                'extraction_status': 'FAIL',
-                'confidence': 0.0,
-                'mode': 'ZERO',
+                'status': 'FAIL',
                 'error': str(e),
-                'triggers': ['/switch_mode ZERO'],
-                'next_cmds': ['/logi-master --fallback']
+                'confidence': 0.0,
+                'mode': self.mode,
+                'timestamp': datetime.now().isoformat(),
+                'next_cmds': ['/switch_mode ZERO', '/error_recovery']
             }
     
-    async def run_extraction(self) -> Dict:
-        """
-        전체 추출 프로세스 실행
-        
-        Returns:
-            dict: 추출 및 처리 결과
+    async def _run_extraction(self, chat_title: str) -> Dict[str, Any]:
+        """실제 브라우저 자동화 실행"""
+        browser = None
+        try:
+            # Playwright 브라우저 시작
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-web-security",
+                        "--disable-features=VizDisplayCompositor",
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage"
+                    ]
+                )
+                
+                # 브라우저 컨텍스트 설정
+                context = await browser.new_context(
+                    storage_state=str(self.auth_file) if self.auth_file.exists() else None,
+                    user_agent=random.choice(self.user_agents),
+                    viewport={"width": 1280, "height": 720},
+                    locale="en-US",
+                    timezone_id="Asia/Seoul"
+                )
+                
+                page = await context.new_page()
+                await stealth_async(page)
+                
+                # WhatsApp Web 접속
+                await page.goto("https://web.whatsapp.com/", wait_until="networkidle")
+                
+                # 로그인 확인 (QR 코드 스캔 필요시)
+                await self._handle_login(page)
+                
+                # 채팅방 선택
+                messages = await self._extract_messages_from_chat(page, chat_title)
+                
+                # 인증 정보 저장
+                await self._save_auth_state(context)
+                
+                await browser.close()
+                
+                return {
+                    'status': 'SUCCESS',
+                    'messages': messages,
+                    'chat_title': chat_title,
+                    'extraction_time': datetime.now().isoformat(),
+                    'message_count': len(messages),
+                    'confidence': self._calculate_extraction_confidence(messages)
+                }
+                
+        except Exception as e:
+            if browser:
+                await browser.close()
+            raise e
+    
+    async def _handle_login(self, page: Page) -> None:
+        """로그인 처리 (QR 코드 스캔 대기)"""
+        try:
+            # QR 코드 존재 확인
+            qr_code = await page.locator('[data-testid="qr-code"]').count()
+            if qr_code > 0:
+                logger.info("🔑 QR 코드 스캔 필요 - 60초 대기")
+                await page.wait_for_selector('[data-testid="chats-list"]', timeout=60000)
+                logger.info("✅ 로그인 완료")
+            else:
+                # 이미 로그인된 상태
+                await page.wait_for_selector('[data-testid="chats-list"]', timeout=30000)
+                logger.info("✅ 기존 세션으로 로그인")
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 로그인 처리 중 오류: {str(e)}")
+            # 로그인 실패시 수동 처리 안내
+            raise Exception("WhatsApp 로그인이 필요합니다. QR 코드를 스캔하세요.")
+    
+    async def _extract_messages_from_chat(self, page: Page, chat_title: str) -> List[str]:
+        """특정 채팅방에서 메시지 추출"""
+        try:
+            # 채팅방 검색 및 선택
+            await page.wait_for_selector('[data-testid="chat-list-search"]', timeout=30000)
+            await page.fill('[data-testid="chat-list-search"]', chat_title)
+            await page.wait_for_timeout(2000)
             
-        Triggers:
-            - 추출 실패 시 재시도
-            - 3회 실패 시 ZERO 모드 전환
-        """
-        for attempt in range(self.retry_attempts):
-            try:
-                self.logger.info(f"Starting extraction attempt {attempt + 1}")
+            # 채팅방 클릭
+            chat_selector = f'[title="{chat_title}"]'
+            await page.wait_for_selector(chat_selector, timeout=30000)
+            await page.click(chat_selector)
+            
+            # 메시지 로딩 대기
+            await page.wait_for_timeout(random.randint(3000, 5000))
+            
+            # 페이지 스크롤 (더 많은 메시지 로드)
+            await self._scroll_to_load_messages(page)
+            
+            # 메시지 추출
+            messages = await page.locator('[data-testid="conversation-panel-messages"] .message-in, [data-testid="conversation-panel-messages"] .message-out').all_text_contents()
+            
+            # 빈 메시지 필터링
+            filtered_messages = [msg.strip() for msg in messages if msg.strip()]
+            
+            logger.info(f"📄 메시지 추출 완료 - {len(filtered_messages)}개")
+            return filtered_messages
+            
+        except Exception as e:
+            logger.error(f"❌ 메시지 추출 오류: {str(e)}")
+            return []
+    
+    async def _scroll_to_load_messages(self, page: Page) -> None:
+        """메시지 로딩을 위한 스크롤"""
+        try:
+            # 위로 스크롤하여 더 많은 메시지 로드
+            for _ in range(5):
+                await page.keyboard.press('PageUp')
+                await page.wait_for_timeout(random.randint(1000, 2000))
+            
+            # 아래로 스크롤하여 최신 메시지까지
+            for _ in range(3):
+                await page.keyboard.press('PageDown')
+                await page.wait_for_timeout(random.randint(1000, 2000))
                 
-                # 브라우저 설정
-                browser, context = await self.setup_browser_session()
-                
-                try:
-                    # 페이지 생성
-                    page = await context.new_page()
-                    
-                    # 인증
-                    if not await self.authenticate_whatsapp(page):
-                        raise Exception("Authentication failed")
-                    
-                    # 메시지 추출
-                    raw_text = await self.extract_chat_messages(page)
-                    
-                    # 데이터 처리
-                    result = await self.process_extracted_data(raw_text)
-                    
-                    self.logger.info(f"Extraction completed successfully")
-                    return result
-                    
-                finally:
-                    # 브라우저 정리
-                    await browser.close()
-                    
-            except Exception as e:
-                self.logger.error(f"Extraction attempt {attempt + 1} failed: {e}")
-                if attempt == self.retry_attempts - 1:
-                    return {
-                        'timestamp': datetime.now().isoformat(),
-                        'extraction_status': 'FAIL',
-                        'confidence': 0.0,
-                        'mode': 'ZERO',
-                        'error': str(e),
-                        'attempts': self.retry_attempts,
-                        'triggers': ['/switch_mode ZERO'],
-                        'next_cmds': ['/logi-master --manual-mode']
-                    }
-                
-                # 재시도 전 대기
-                await asyncio.sleep(5)
+        except Exception as e:
+            logger.warning(f"⚠️ 스크롤 처리 중 오류: {str(e)}")
+    
+    async def _save_auth_state(self, context) -> None:
+        """인증 상태 저장"""
+        try:
+            await context.storage_state(path=str(self.auth_file))
+            logger.info("💾 인증 상태 저장 완료")
+        except Exception as e:
+            logger.warning(f"⚠️ 인증 상태 저장 실패: {str(e)}")
+    
+    async def _process_ai_summary(self, messages: List[str]) -> Dict[str, Any]:
+        """AI 요약 처리"""
+        try:
+            if not messages:
+                return {
+                    'summary': '추출된 메시지가 없습니다.',
+                    'tasks': [],
+                    'urgent': [],
+                    'important': [],
+                    'ai_confidence': 0.0
+                }
+            
+            # WhatsApp 메시지 파싱
+            parsed_messages = self.whatsapp_processor.parse_whatsapp_text('\n'.join(messages))
+            
+            # AI 요약 실행
+            summary_result = self.ai_summarizer.summarize_conversation(messages)
+            
+            # 추가 메타데이터
+            extraction_data = self.whatsapp_processor.extract_summary_data(parsed_messages)
+            
+            return {
+                'summary': summary_result.get('summary', ''),
+                'tasks': summary_result.get('tasks', []),
+                'urgent': summary_result.get('urgent', []),
+                'important': summary_result.get('important', []),
+                'ai_confidence': summary_result.get('confidence', 0.0),
+                'participants': list(extraction_data.get('participants', [])),
+                'message_analysis': extraction_data
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ AI 요약 처리 오류: {str(e)}")
+            return {
+                'summary': f'AI 요약 처리 중 오류 발생: {str(e)}',
+                'tasks': [],
+                'urgent': [],
+                'important': [],
+                'ai_confidence': 0.0
+            }
+    
+    async def _save_extracted_data(self, result: Dict[str, Any]) -> None:
+        """추출된 데이터 저장"""
+        try:
+            # 날짜별 데이터 파일
+            date_key = datetime.now().strftime("%Y-%m-%d")
+            data_file = self.data_dir / f"whatsapp_data_{date_key}.json"
+            
+            # 기존 데이터 로드
+            if data_file.exists():
+                with open(data_file, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+            else:
+                existing_data = {}
+            
+            # 새 데이터 추가
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            existing_data[timestamp] = {
+                'chat_title': result.get('chat_title', ''),
+                'summary': result.get('summary', ''),
+                'tasks': result.get('tasks', []),
+                'urgent': result.get('urgent', []),
+                'important': result.get('important', []),
+                'message_count': result.get('message_count', 0),
+                'confidence': result.get('confidence', 0.0),
+                'ai_confidence': result.get('ai_confidence', 0.0),
+                'participants': result.get('participants', []),
+                'extraction_time': result.get('extraction_time', ''),
+                'mode': self.mode,
+                'raw_messages': result.get('messages', [])[:50]  # 최대 50개 메시지만 저장
+            }
+            
+            # 파일 저장
+            with open(data_file, 'w', encoding='utf-8') as f:
+                json.dump(existing_data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"💾 데이터 저장 완료 - {data_file}")
+            
+        except Exception as e:
+            logger.error(f"❌ 데이터 저장 오류: {str(e)}")
+    
+    def _calculate_extraction_confidence(self, messages: List[str]) -> float:
+        """추출 신뢰도 계산"""
+        if not messages:
+            return 0.0
         
-        return {}
-
-
-# 스케줄러 실행 함수
-async def scheduled_extraction(config_path: str = "configs/config_prime_dev.yaml"):
-    """
-    스케줄된 추출 실행
-    
-    Args:
-        config_path: 설정 파일 경로
+        confidence = 0.0
         
-    Returns:
-        dict: 추출 결과
+        # 메시지 수량 점수
+        if len(messages) >= 10:
+            confidence += 0.4
+        elif len(messages) >= 5:
+            confidence += 0.2
+        elif len(messages) >= 1:
+            confidence += 0.1
+        
+        # 메시지 품질 점수
+        quality_score = sum(1 for msg in messages if len(msg.strip()) > 10) / len(messages)
+        confidence += quality_score * 0.3
+        
+        # 타임스탬프 포함 여부
+        timestamp_score = sum(1 for msg in messages if any(char.isdigit() for char in msg[:20])) / len(messages)
+        confidence += timestamp_score * 0.3
+        
+        return min(confidence, 1.0)
+    
+    def get_status(self) -> Dict[str, Any]:
+        """RPA 상태 정보 반환"""
+        return {
+            'mode': self.mode,
+            'confidence_threshold': self.confidence_threshold,
+            'auth_file_exists': self.auth_file.exists(),
+            'data_dir': str(self.data_dir),
+            'logs_dir': str(self.logs_dir),
+            'default_chats': self.default_chat_titles,
+            'version': '3.4-mini',
+            'status': 'ready'
+        }
+
+# 메인 실행 함수
+async def main():
     """
-    extractor = WhatsAppRPAExtractor(config_path)
-    result = await extractor.run_extraction()
+    메인 실행 함수
     
-    # 결과 로깅
-    status = result.get('extraction_status', 'UNKNOWN')
-    confidence = result.get('confidence', 0.0)
+    사용법:
+    - python -m macho_gpt.rpa.logi_rpa_whatsapp_241219
+    - 또는 직접 실행: python logi_rpa_whatsapp_241219.py
+    """
+    logger.info("🚀 MACHO-GPT v3.4-mini RPA 시작")
     
-    extractor.logger.info(f"Scheduled extraction completed - Status: {status}, Confidence: {confidence}")
+    # RPA 인스턴스 생성
+    rpa = WhatsAppRPAExtractor(mode="LATTICE")
     
-    return result
+    # 상태 확인
+    status = rpa.get_status()
+    logger.info(f"📊 RPA 상태: {status}")
+    
+    # 채팅 메시지 추출
+    result = await rpa.extract_chat_messages("MR.CHA 전용")
+    
+    # 결과 출력
+    if result['status'] == 'SUCCESS':
+        logger.info("✅ 추출 성공!")
+        logger.info(f"📊 요약: {result.get('summary', '')}")
+        logger.info(f"📋 태스크: {len(result.get('tasks', []))}개")
+        logger.info(f"🚨 긴급: {len(result.get('urgent', []))}개")
+        logger.info(f"⭐ 중요: {len(result.get('important', []))}개")
+        
+        # 추천 명령어
+        print("\n🔧 추천 명령어:")
+        print("- /logi_dashboard [대시보드 확인]")
+        print("- /ai_summary [AI 요약 재실행]")
+        print("- /export_data [데이터 내보내기]")
+        
+    else:
+        logger.error("❌ 추출 실패")
+        logger.error(f"오류: {result.get('error', '알 수 없는 오류')}")
+        
+        # 오류 해결 명령어
+        print("\n🔧 오류 해결 명령어:")
+        print("- /switch_mode ZERO [안전 모드 전환]")
+        print("- /setup_auth [인증 재설정]")
+        print("- /check_browser [브라우저 확인]")
 
-
-# CLI 실행
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="WhatsApp RPA Extractor")
-    parser.add_argument("--config", default="configs/config_prime_dev.yaml", help="Config file path")
-    parser.add_argument("--mode", default="PRIME", help="Operating mode")
-    
-    args = parser.parse_args()
-    
-    # 비동기 실행
-    result = asyncio.run(scheduled_extraction(args.config))
-    
-    print(f"Extraction completed with status: {result.get('extraction_status', 'UNKNOWN')}")
-    print(f"Confidence: {result.get('confidence', 0.0)}")
-    
-    # 추천 명령어 출력
-    if result.get('next_cmds'):
-        print("\n🔧 **추천 명령어:**")
-        for cmd in result.get('next_cmds', [])[:3]:
-            print(f"  {cmd}")
-
-# 호환성을 위한 별칭
-WhatsAppRPAProcessor = WhatsAppRPAExtractor 
+    asyncio.run(main()) 
