@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["macho_gpt", "macho_gpt.core", "macho_gpt.rpa", "macho_gpt.utils"]
+packages = ["macho_gpt", "macho_gpt.core", "macho_gpt.rpa"]
 py-modules = [
     "whatsapp_executive_dashboard",
     "simplified_whatsapp_app", 
