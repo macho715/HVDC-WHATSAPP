@@ -1,139 +1,263 @@
 # 🚀 MACHO-GPT v3.4-mini 빠른 시작 가이드
 
-## 📋 현재 상황 요약
-터미널에서 여러 ModuleNotFoundError가 발생하고 있습니다. 이를 해결하기 위해 다음과 같은 작업을 완료했습니다:
+## 📋 프로젝트 상태 요약
+**MACHO-GPT v3.4-mini WhatsApp 자동화 시스템**이 GitHub에 성공적으로 업로드되었습니다. 다음 가이드를 따라 빠르게 시작하세요.
 
-### ✅ 완료된 수정사항
-1. **Graceful Import 적용** - `macho_gpt/__init__.py` 수정
-2. **Pyright 설정** - `pyproject.toml` 생성 ([Microsoft Pyright 문서](https://github.com/microsoft/pyright/blob/main/docs/configuration.md#reportMissingImports) 참고)
-3. **Simplified App 생성** - 의존성 문제 없는 `simplified_whatsapp_app.py`
-4. **통합 실행 스크립트** - `fix_and_run.py`
+### ✅ 시스템 정보
+- **버전**: v3.4-mini
+- **GitHub**: [HVDC-WHATSAPP](https://github.com/macho715/HVDC-WHATSAPP)
+- **프로젝트**: Samsung C&T Logistics · HVDC 물류 자동화
+- **상태**: ✅ 프로덕션 준비 완료
 
-## 🔧 실행 방법
+## 🚀 빠른 시작 (3단계)
 
-### 방법 1: 간단한 모드 (권장)
+### 1단계: 저장소 복제
 ```bash
-# 최소 패키지만 설치
-pip install streamlit
-
-# 간단한 앱 실행
-streamlit run simplified_whatsapp_app.py
+git clone https://github.com/macho715/HVDC-WHATSAPP.git
+cd HVDC-WHATSAPP
 ```
 
-### 방법 2: 전체 패키지 설치
+### 2단계: 의존성 설치
 ```bash
-# 모든 패키지 설치 (순서대로)
-pip install streamlit openai pandas
-pip install playwright fastapi uvicorn pydantic python-multipart
-pip install playwright-stealth
+# 최소 의존성 설치 (추천)
+pip install -r requirements_simple.txt
 
-# Playwright 브라우저 설치
-python -m playwright install
-
-# 전체 앱 실행
-streamlit run whatsapp_summary_app.py --server.port 8505
+# 또는 전체 기능 설치
+pip install -r requirements.txt
 ```
 
-### 방법 3: 통합 스크립트 사용
+### 3단계: 앱 실행
 ```bash
-# 모든 문제를 자동으로 해결하는 스크립트
-python fix_and_run.py
+# 통합 실행기 사용 (가장 쉬움)
+python run_app.py
+
+# 또는 개별 앱 실행
+streamlit run simplified_whatsapp_app.py --server.port 8506
+streamlit run whatsapp_executive_dashboard.py --server.port 8505
 ```
 
-## 🔍 문제 해결
+## 🎯 실행 방법 상세
 
-### ModuleNotFoundError 발생시
-1. **playwright 오류**: `pip install playwright && python -m playwright install`
-2. **fastapi 오류**: `pip install fastapi uvicorn`
-3. **MACHO-GPT 모듈 오류**: `simplified_whatsapp_app.py` 사용
-
-### AttributeError: 'str' object has no attribute 'value'
-1. 기존 데이터 삭제: `rm data/workflow_data.json`
-2. 앱 재시작
-
-### 포트 충돌 오류
+### 방법 1: 통합 실행기 (권장)
 ```bash
-# 프로세스 확인 및 종료
-netstat -ano | findstr :8505
-taskkill /PID [PID번호] /F
+python run_app.py
+```
+- 모든 앱을 자동으로 실행
+- 포트 충돌 자동 해결
+- 브라우저 자동 열기
 
-# 다른 포트 사용
+### 방법 2: 개별 앱 실행
+```bash
+# Executive Dashboard (경영진용)
+streamlit run whatsapp_executive_dashboard.py --server.port 8505
+
+# Simplified App (일반 사용자용)
 streamlit run simplified_whatsapp_app.py --server.port 8506
 ```
 
-## 📊 기능별 실행 상태
-
-| 기능 | 필수 패키지 | 상태 | 대안 |
-|------|-------------|------|------|
-| 기본 대시보드 | streamlit | ✅ | - |
-| AI 요약 | openai | ⚠️ | Mock 요약 |
-| 워크플로우 | macho_gpt | ⚠️ | Mock 데이터 |
-| WhatsApp RPA | playwright | ❌ | 수동 입력 |
-| FastAPI | fastapi | ❌ | Streamlit만 사용 |
-
-## 🎯 권장 실행 단계
-
-### 1단계: 기본 앱 테스트
+### 방법 3: WhatsApp 자동화
 ```bash
-pip install streamlit
-streamlit run simplified_whatsapp_app.py
+# WhatsApp 인증 설정
+python extract_whatsapp_auto.py --setup
+
+# 자동 추출 실행
+python extract_whatsapp_auto.py --run
 ```
-→ http://localhost:8501 접속
 
-### 2단계: OpenAI 연동 (선택)
+## 🔧 고급 설정
+
+### OpenAI API 설정
 ```bash
-# OpenAI API 키 설정
-set OPENAI_API_KEY=your_api_key_here
-
-# 또는 환경변수 파일 생성
+# .env 파일 생성
 echo OPENAI_API_KEY=your_api_key_here > .env
+
+# 또는 환경변수 설정
+set OPENAI_API_KEY=your_api_key_here  # Windows
+export OPENAI_API_KEY=your_api_key_here  # Linux/Mac
 ```
 
-### 3단계: WhatsApp 자동화 (선택)
+### WhatsApp RPA 설정 (선택사항)
 ```bash
+# Playwright 설치 (고급 기능)
 pip install playwright playwright-stealth
 python -m playwright install
-python extract_whatsapp_auto.py --setup
 ```
 
-## 🚨 응급 실행 방법
-
-패키지 설치가 안 되는 경우:
+### React 프론트엔드 실행 (선택사항)
 ```bash
-# Python 환경 확인
-python --version
-pip --version
+cd react_frontend
+npm install
+npm start
+```
 
-# 기본 라이브러리만으로 실행
+## 📊 접속 URL
+
+| 애플리케이션 | URL | 설명 |
+|------------|-----|------|
+| **Executive Dashboard** | http://localhost:8505 | 경영진용 종합 대시보드 |
+| **Simplified App** | http://localhost:8506 | 일반 사용자용 WhatsApp 앱 |
+| **Integrated App** | http://localhost:8507 | 통합 관리 시스템 |
+| **React Frontend** | http://localhost:3000 | 모던 웹 인터페이스 |
+
+## 🔍 문제 해결
+
+### 1. 의존성 오류
+```bash
+# 기본 패키지 재설치
+pip install streamlit pandas openai --upgrade
+
+# 가상환경 사용 (권장)
+python -m venv venv
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
+pip install -r requirements_simple.txt
+```
+
+### 2. 포트 충돌
+```bash
+# 사용 중인 포트 확인
+netstat -ano | findstr :8505
+netstat -ano | findstr :8506
+
+# 프로세스 종료
+taskkill /PID [PID번호] /F
+
+# 다른 포트 사용
+streamlit run simplified_whatsapp_app.py --server.port 8508
+```
+
+### 3. 모듈 import 오류
+```bash
+# Python 경로 확인
+python -c "import sys; print(sys.path)"
+
+# 패키지 재설치
+pip uninstall streamlit
+pip install streamlit
+```
+
+### 4. WhatsApp 인증 문제
+```bash
+# 인증 정보 재설정
+python extract_whatsapp_auto.py --setup
+
+# 브라우저 캐시 삭제
+python extract_whatsapp_auto.py --clean
+```
+
+## 🚨 응급 실행 (최소 설정)
+
+패키지 설치 문제가 있을 경우:
+```bash
+# Python 기본 라이브러리만 사용
 python -c "
 import json
 from datetime import datetime
-print('MACHO-GPT v3.4-mini 기본 실행 테스트')
-print(f'현재 시각: {datetime.now()}')
-print('✅ Python 환경 정상')
+print('🤖 MACHO-GPT v3.4-mini 기본 실행 테스트')
+print(f'📅 현재 시각: {datetime.now()}')
+print('✅ Python 환경 정상 작동')
+"
+
+# Streamlit 없이 기본 실행
+python simplified_whatsapp_app.py
+```
+
+## 📋 시스템 요구사항
+
+### 최소 요구사항
+- **Python**: 3.8+
+- **RAM**: 2GB 이상
+- **저장공간**: 500MB 이상
+- **네트워크**: 인터넷 연결 (API 사용시)
+
+### 권장 사양
+- **Python**: 3.11+
+- **RAM**: 4GB 이상
+- **저장공간**: 1GB 이상
+- **브라우저**: Chrome/Edge 최신 버전
+
+## 🔧 추천 실행 시퀀스
+
+### 첫 실행시
+```bash
+# 1. 저장소 복제
+git clone https://github.com/macho715/HVDC-WHATSAPP.git
+cd HVDC-WHATSAPP
+
+# 2. 가상환경 생성 (권장)
+python -m venv venv
+venv\Scripts\activate
+
+# 3. 의존성 설치
+pip install -r requirements_simple.txt
+
+# 4. 앱 실행
+python run_app.py
+```
+
+### 정기 사용시
+```bash
+# 1. 가상환경 활성화
+venv\Scripts\activate
+
+# 2. 업데이트 확인
+git pull origin main
+
+# 3. 앱 실행
+python run_app.py
+```
+
+## 🎯 성능 최적화
+
+### 메모리 최적화
+```bash
+# 메모리 사용량 확인
+python -c "
+import psutil
+print(f'사용 가능한 메모리: {psutil.virtual_memory().available / (1024**3):.1f} GB')
 "
 ```
 
-## 📱 접속 URL
-- **Simplified App**: http://localhost:8501
-- **Full App**: http://localhost:8505  
-- **FastAPI Docs**: http://localhost:8503/docs
-
-## 🔧 추천 명령어 시퀀스
+### 캐시 관리
 ```bash
-# 1. 환경 확인
-python --version
+# Streamlit 캐시 정리
+streamlit cache clear
 
-# 2. 기본 패키지 설치
-pip install streamlit
-
-# 3. 앱 실행
-streamlit run simplified_whatsapp_app.py
-
-# 4. WhatsApp 자동화 (선택)
-python extract_whatsapp_auto.py --setup
-python extract_whatsapp_auto.py
+# 임시 파일 정리
+python -c "
+import tempfile, shutil
+temp_dir = tempfile.gettempdir()
+print(f'임시 디렉토리: {temp_dir}')
+"
 ```
 
+## 📞 도움말
+
+### 자주 묻는 질문
+1. **Q: 앱이 시작되지 않아요**
+   - A: `pip install streamlit --upgrade` 실행 후 재시도
+
+2. **Q: WhatsApp이 연결되지 않아요**
+   - A: `python extract_whatsapp_auto.py --setup` 실행
+
+3. **Q: 포트 8505가 사용 중이에요**
+   - A: `streamlit run simplified_whatsapp_app.py --server.port 8508` 사용
+
+### 추가 지원
+- **GitHub Issues**: [문제 신고](https://github.com/macho715/HVDC-WHATSAPP/issues)
+- **문서**: [프로젝트 Wiki](https://github.com/macho715/HVDC-WHATSAPP/wiki)
+- **업데이트**: [Release Notes](https://github.com/macho715/HVDC-WHATSAPP/releases)
+
 ---
-💡 **팁**: 문제가 계속 발생하면 `simplified_whatsapp_app.py`를 사용하세요. 이 버전은 모든 의존성 문제를 gracefully 처리합니다. 
+
+## 🎉 성공적인 실행 확인
+
+앱이 정상적으로 실행되면 다음 메시지가 표시됩니다:
+```
+🤖 MACHO-GPT v3.4-mini 실행 중
+📊 Dashboard: http://localhost:8505
+💬 WhatsApp App: http://localhost:8506
+🔄 시스템 상태: ✅ 정상
+```
+
+**🚀 축하합니다! MACHO-GPT v3.4-mini가 성공적으로 실행되었습니다.** 
