@@ -149,7 +149,11 @@ class HVDCWhatsAppExtractor:
         try:
             # 1단계: 돋보기 버튼 클릭 (넓은 뷰포트로 가려짐 방지)
             print("🔍 돋보기 버튼 클릭 중...")
-            await page.click(self.BTN_SEARCH, timeout=5000)
+            try:
+                await page.locator('button[aria-label="Search or start new chat"]').click(timeout=5000)
+            except Error:
+                # UI 업데이트 대응 – title 또는 data-icon 속성 fallback
+                await page.locator('button[title*="Search"]').first.click(timeout=5000)
             print("✅ 돋보기 버튼 클릭 성공")
             
         except Exception as e:
@@ -301,11 +305,12 @@ class HVDCWhatsAppExtractor:
         print("=" * 60)
         
         results = []
-        from playwright.async_api import async_playwright, TimeoutError
+        from playwright.async_api import async_playwright, TimeoutError, Error   # S‑08
 
         async with async_playwright() as p:
             context = await self.setup_browser_context(p)
             page = await context.new_page()
+            browser = context = page = None          # S‑08
             
             try:
                 # WhatsApp Web 접속 및 로그인
@@ -354,7 +359,16 @@ class HVDCWhatsAppExtractor:
                 print(f"❌ 오류 발생: {str(e)}")
                 logger.error(f"Browser automation error: {str(e)}")
             finally:
-                await context.close()
+                # ---------- S‑08 종료 루틴 개선 ----------
+                if context:
+                    try:
+                        await context.close()          # 컨텍스트 종료
+                        print("✅ 브라우저 컨텍스트 종료 완료")
+                    except Error as e:
+                        # 이미 종료된 경우라면 무시
+                        if "Target page, context or browser has been closed" not in str(e):
+                            print(f"⚠️ 컨텍스트 종료 중 오류 (정상 종료): {str(e)}")
+                # ----------------------------------------
         
         return results
     
