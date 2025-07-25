@@ -1,0 +1,40 @@
+{
+  "total_chats_analyzed": 3,
+  "total_messages": 63,
+  "analysis_timestamp": "2025-07-24T21:40:30.766681",
+  "chat_analyses": [
+    {
+      "chat_title": "Abu Dhabi Logistics",
+      "message_count": 11,
+      "analysis": {
+        "error": "\n\nYou tried to access openai.ChatCompletion, but this is no longer supported in openai>=1.0.0 - see the README at https://github.com/openai/openai-python for the API.\n\nYou can run `openai migrate` to automatically upgrade your codebase to use the 1.0.0 interface. \n\nAlternatively, you can pin your installation to the old version, e.g. `pip install openai==0.28`\n\nA detailed migration guide is available here: https://github.com/openai/openai-python/discussions/742\n"
+      },
+      "timestamp": "2025-07-24T21:40:30.764162",
+      "confidence": 0.0
+    },
+    {
+      "chat_title": "Jopetwil 71 Group",
+      "message_count": 11,
+      "analysis": {
+        "error": "\n\nYou tried to access openai.ChatCompletion, but this is no longer supported in openai>=1.0.0 - see the README at https://github.com/openai/openai-python for the API.\n\nYou can run `openai migrate` to automatically upgrade your codebase to use the 1.0.0 interface. \n\nAlternatively, you can pin your installation to the old version, e.g. `pip install openai==0.28`\n\nA detailed migration guide is available here: https://github.com/openai/openai-python/discussions/742\n"
+      },
+      "timestamp": "2025-07-24T21:40:30.765178",
+      "confidence": 0.0
+    },
+    {
+      "chat_title": "AGI- Wall panel-GCC Storage",
+      "message_count": 41,
+      "analysis": {
+        "error": "\n\nYou tried to access openai.ChatCompletion, but this is no longer supported in openai>=1.0.0 - see the README at https://github.com/openai/openai-python for the API.\n\nYou can run `openai migrate` to automatically upgrade your codebase to use the 1.0.0 interface. \n\nAlternatively, you can pin your installation to the old version, e.g. `pip install openai==0.28`\n\nA detailed migration guide is available here: https://github.com/openai/openai-python/discussions/742\n"
+      },
+      "timestamp": "2025-07-24T21:40:30.766681",
+      "confidence": 0.0
+    }
+  ],
+  "overall_summary": {
+    "total_keywords": 0,
+    "common_keywords": [],
+    "main_issues": [],
+    "required_actions": []
+  }
+}

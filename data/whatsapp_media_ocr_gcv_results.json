@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-07-25T22:09:05.940405",
+  "total_processed": 2,
+  "successful": 0,
+  "results": [
+    {
+      "error": "Google Cloud Vision API error: 403 This API method requires billing to be enabled. Please enable billing on project #43126604210 by visiting https://console.developers.google.com/billing/enable?project=43126604210 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry. [reason: \"BILLING_DISABLED\"\ndomain: \"googleapis.com\"\nmetadata {\n  key: \"service\"\n  value: \"vision.googleapis.com\"\n}\nmetadata {\n  key: \"containerInfo\"\n  value: \"43126604210\"\n}\nmetadata {\n  key: \"consumer\"\n  value: \"projects/43126604210\"\n}\n, locale: \"en-US\"\nmessage: \"This API method requires billing to be enabled. Please enable billing on project #43126604210 by visiting https://console.developers.google.com/billing/enable?project=43126604210 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry.\"\n, links {\n  description: \"Google developers console billing\"\n  url: \"https://console.developers.google.com/billing/enable?project=43126604210\"\n}\n]",
+      "text": "",
+      "confidence": 0.0,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_220901.jpg"
+    },
+    {
+      "error": "Google Cloud Vision API error: 403 This API method requires billing to be enabled. Please enable billing on project #43126604210 by visiting https://console.developers.google.com/billing/enable?project=43126604210 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry. [reason: \"BILLING_DISABLED\"\ndomain: \"googleapis.com\"\nmetadata {\n  key: \"service\"\n  value: \"vision.googleapis.com\"\n}\nmetadata {\n  key: \"containerInfo\"\n  value: \"43126604210\"\n}\nmetadata {\n  key: \"consumer\"\n  value: \"projects/43126604210\"\n}\n, locale: \"en-US\"\nmessage: \"This API method requires billing to be enabled. Please enable billing on project #43126604210 by visiting https://console.developers.google.com/billing/enable?project=43126604210 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry.\"\n, links {\n  description: \"Google developers console billing\"\n  url: \"https://console.developers.google.com/billing/enable?project=43126604210\"\n}\n]",
+      "text": "",
+      "confidence": 0.0,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_220904.jpg"
+    }
+  ]
+}

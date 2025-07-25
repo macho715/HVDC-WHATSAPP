@@ -1,0 +1,4 @@
+[run]
+omit =
+    macho_gpt/core/logi_workflow_241219.py
+    macho_gpt/rpa/* 

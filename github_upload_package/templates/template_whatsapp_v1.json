@@ -1,0 +1,116 @@
+{
+  "template_info": {
+    "name": "WhatsApp Message Template",
+    "version": "v1.0",
+    "project": "HVDC_SAMSUNG_CT_WHATSAPP",
+    "created_date": "2024-12-19",
+    "description": "Template for WhatsApp message parsing and processing"
+  },
+  
+  "message_structure": {
+    "timestamp": "2024-12-19T18:00:00Z",
+    "sender": "MR.CHA",
+    "content": "Sample message content",
+    "is_urgent": false,
+    "is_important": false,
+    "message_type": "text",
+    "confidence": 0.95,
+    "extracted_keywords": []
+  },
+  
+  "summary_structure": {
+    "date": "2024-12-19",
+    "summary": "Executive summary of the conversation",
+    "tasks": [
+      "Task 1: Action item description",
+      "Task 2: Follow-up required"
+    ],
+    "urgent": [
+      "Urgent message 1",
+      "Urgent message 2"
+    ],
+    "important": [
+      "Important message 1",
+      "Important message 2"
+    ],
+    "raw": "Raw conversation text",
+    "automation_timestamp": "2024-12-19T18:00:00Z",
+    "extraction_confidence": 0.92,
+    "parsed_messages": 25,
+    "kpi_data": {
+      "total_messages": 25,
+      "urgent_count": 2,
+      "important_count": 3,
+      "participant_count": 5,
+      "urgent_ratio": 0.08,
+      "important_ratio": 0.12,
+      "peak_hour": 14
+    }
+  },
+  
+  "keyword_patterns": {
+    "urgent": {
+      "korean": ["긴급", "응급", "즉시"],
+      "english": ["urgent", "immediate", "critical", "ASAP"],
+      "confidence_threshold": 0.85
+    },
+    "important": {
+      "korean": ["중요", "승인", "확인", "결정"],
+      "english": ["important", "approval", "decision"],
+      "confidence_threshold": 0.80
+    }
+  },
+  
+  "rpa_selectors": {
+    "whatsapp_web": {
+      "chat_search": "[data-testid=\"chat-list-search\"]",
+      "message_container": "[data-testid=\"conversation-panel-wrapper\"]",
+      "message_elements": "[data-testid=\"msg-container\"]",
+      "qr_code": "canvas[aria-label=\"Scan me!\"]",
+      "auth_check": "[data-testid=\"conversation-panel-wrapper\"]"
+    }
+  },
+  
+  "automation_config": {
+    "schedule": {
+      "time": "18:00",
+      "timezone": "Europe/London",
+      "days": ["mon", "tue", "wed", "thu", "fri"]
+    },
+    "retry_policy": {
+      "max_attempts": 3,
+      "delay_seconds": 5,
+      "backoff_multiplier": 2
+    },
+    "thresholds": {
+      "confidence_min": 0.90,
+      "urgent_threshold": 5,
+      "participant_threshold": 10,
+      "message_count_max": 1000
+    }
+  },
+  
+  "macho_gpt_integration": {
+    "modes": {
+      "PRIME": {
+        "confidence_min": 0.95,
+        "auto_triggers": true
+      },
+      "LATTICE": {
+        "text_processing": "advanced",
+        "ocr_threshold": 0.85
+      },
+      "ZERO": {
+        "fallback_mode": true,
+        "manual_override": true
+      }
+    },
+    "commands": [
+      "/logi-master summarize",
+      "/switch_mode LATTICE",
+      "/visualize_data --type=timeline",
+      "/kpi_monitor message_analysis",
+      "/alert_system urgent_threshold_exceeded"
+    ]
+  }
+} 

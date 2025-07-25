@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-07-25T22:40:47.405227",
+  "total_processed": 1,
+  "successful": 1,
+  "results": [
+    {
+      "text": "коу\nM\n김국일 kukil.kim@samsung.com>\nREPW: RE: [결재동보] [UAE HVDC] ALS(37) 운송비 및 하역비\n집행의\n받는 사람 keeryong@samsung.com 차민규\njeong@samsung.com: Adnan Ojintakam: Roldan Men\n2. Invoice (97294075) Apr2025\n안녕하세요 남기\n해당 구분은 AG가 맞습니다.\n휴먼에러(Typo 확인되어 보이스는 수정 요청할 예정이며, 수정본은 Adman\n에게 전달드리겠습니다.\n안녕하세요 차민규 프로\n첨부된\n(37294075확인해주시고 ALS에 인보이스 수정요\nice\n진행해주시길 부탁드립니다.\n감사합니다.\n김국드림\n김국일 Kuk Kim (Roy)\nDM Project Lightning VDC Log\nchoe4971204000\nMobile +971565487015\nkukil kim@samsung.com\nCreating\n삼성물산\nFutureScape\nHO",
+      "confidence": 0.95,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_224044.jpg"
+    }
+  ]
+}

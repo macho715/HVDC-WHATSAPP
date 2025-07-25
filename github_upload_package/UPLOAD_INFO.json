@@ -1,0 +1,27 @@
+{
+  "upload_date": "2025-07-25T23:20:24.269373",
+  "project": "MACHO-GPT v3.4-mini WhatsApp Automation",
+  "partnership": "Samsung C&T Logistics · ADNOC·DSV Partnership",
+  "system_status": {
+    "running_ports": [
+      8505,
+      8506,
+      8507
+    ],
+    "mode": "ZERO",
+    "confidence": "51.0%",
+    "target_confidence": "90%+"
+  },
+  "files_included": [
+    "simplified_whatsapp_app.py",
+    "run_app.py",
+    "whatsapp_executive_dashboard.py",
+    "extract_whatsapp_auto.py",
+    "requirements.txt",
+    "pyproject.toml",
+    "README.md",
+    "PROJECT_SUMMARY.md",
+    "GITHUB_UPDATE_GUIDE.md"
+  ],
+  "security_notes": "auth.json 및 민감 정보 제외됨"
+}

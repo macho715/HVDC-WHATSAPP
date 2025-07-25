@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-07-25T22:43:13.224265",
+  "total_processed": 5,
+  "successful": 5,
+  "results": [
+    {
+      "text": "коу\n김국일 kukil.kim@samsung.com>\nREFERE[결재동보] [UAE, HVDC] ALS(37) 운송하역비\n집행의 수\n받는 사람 karyong@amangcom\njeongsamsung.com: Adnan Ojintakan: Wolden Mendoza\n2. Invoice (924075A20\n안녕하세요 남기\n해당 구분은 AI가 맞습니다.\n휴먼에러(Typoj확인되어 보이스는 수정요청할 예정이며, 수정본은 Adan\n에게 전달드리겠습니다.\n안녕하세요 차민규 프로\n첨부된 Invoice (37294075 확인해주시고 ALS에 인보이스 수정요청을\n진행해주시길 부탁드립니다.\n감사합니다.\n김일드림\nBrods\n김국일 Kuk Kim (Roy)\nDM Project Lightning (HVDCL\nOffice +971 2094 0500\nMobile\n971565487015\nCreating\n삼성물산\nFutureScape\nHO",
+      "confidence": 0.95,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_224300.jpg"
+    },
+    {
+      "text": "←\nAdnoc Ouda\nA\n+9\nMany thanks PM 2:36 /\nYou are welcome Mr. Cha\n오늘\nGood Morning Mr. Cha\nPM 2:40\nJ71 FEP received now\nAM 9:20\nWill send formal notification for you by\nmail to start utilizing the vessel\nAM 9:20\n10:03",
+      "confidence": 0.95,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_224303.jpg"
+    },
+    {
+      "text": "Re: ALS] Jopetwil 71 - Urgent Update Required - FEP & CEP Progress and Punch List St....\nMahmoud Ouda (ADNOC Logistics & Services <moda@ad\n→\n2005-07-14 (213\n생습니다\n민\n규\n●Waltham Madanaya; ● Abdulrahman Njim popet-Marn\noperations.samsungdasudha Das Gopal; +14\nNoted Owner will notify us tomorrow once follow up inspection is completed to start loadingmediately. Expected\ntomorrow\non\nDear Capt. @Abdulmonam\nMe\nKindly note CT will start loading 173 tomorrow immediately after CSP follow up inspection. Please notify us in\naggregate is urgently required at site.\nBest Regards",
+      "confidence": 0.95,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_224305.jpg"
+    },
+    {
+      "text": "Jptw71 Henok\nGood afternoon\nDv Q 1\nKindly note that will proceed to Jepetil jetty.\nICAD das to port side main engine fuel pump\nmafunctioning Once recifed main engine issue we wil\nnotify you accordingly for passing delivery of care.\nGading\nDear CFCC Team\nKindly update\naval in MATA system\nDom AL\nChale and 1100h a 21st\n2325 and P\nJopetetty: CAD at 2000 to 22025.\nMayted\n24hrs it will require\nMay I know t\nit's better to follow up with our compers. Otherwise it\nmight take days a\ntheasg for your personal\nI am expecting it will be complet\nafternoon hours and we might resume operation after\nsmarowut that's only they do the job astep\npriority, not it might take\na\n오전 8:38",
+      "confidence": 0.95,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_224308.jpg"
+    },
+    {
+      "text": "Yulia MAMMOET\nGood morning\na\nGood morning!\nSchedule -> today: lashing & deck preparation,\ntomorrow: load out.\n오전 7:25\n이 메시지를 삭제했습니다.\n오전7.25\nI have shared the full schedule via Outlook earlier\nYes, today's is deck preps and TR's loading on SPMT\nTomorrow, around 2pm, load out\nSea fastening will be finished on 23rd by noon\nA\ngood afternoon! Just checking, is tomorrow's schedule\nproceeding as planned?\n22:14\nGood afternoon!\nAs I've mentioned in the group chat, we will start Loadout\nat 12:00\nLCT preparations are finished\n982:15\n오후215\n오후 2:17 7",
+      "confidence": 0.95,
+      "engine": "gcv",
+      "file_path": "downloads\\whatsapp_media_20250725_224310.jpg"
+    }
+  ]
+}

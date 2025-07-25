@@ -1,14 +1,4 @@
-# 🔐 MACHO-GPT v3.4-mini Security & Performance Exclusions
-
-# 🚨 보안 민감 파일들
-auth.json
-*.key
-*.pem
-*.env
-config_*.yaml
-secrets/
-
-# 🐍 Python 캐시 및 빌드 파일
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -31,57 +21,139 @@ wheels/
 *.egg
 MANIFEST
 
-# 📊 로그 및 임시 파일
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# WhatsApp Project Specific
+browser_data/
+downloads/
 logs/
 *.log
+auth.json
+auth_backups/
+client_secret*.json
+token.pickle
+
+# Temporary files
 *.tmp
 *.temp
-temp/
-.temp/
+*~
+.DS_Store
+Thumbs.db
 
-# 💻 IDE 및 에디터 파일
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# 📱 OS 생성 파일
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Node.js (React Frontend)
+react_frontend/node_modules/
+react_frontend/npm-debug.log*
+react_frontend/yarn-debug.log*
+react_frontend/yarn-error.log*
 
-# 🌐 웹 브라우저 관련
-*.crx
-*.xpi
+# Build outputs
+react_frontend/build/
+react_frontend/dist/
 
-# 📦 의존성 디렉토리
-node_modules/
-bower_components/
-
-# 🎯 특정 프로젝트 파일
-summaries_backup.json
-workflow_data_backup.json
+# Test results
 test_results/
-screenshots/
+*.test.json
+test_*.json
+
+# Large media files (keep only essential)
+downloads/*.jpg
+downloads/*.png
+downloads/*.pdf
+!downloads/sample_*.jpg
+!downloads/sample_*.png
+
+# Backup files
+*.bak
 *.backup
+*.old
 
-# 📱 Playwright 브라우저 파일
-.playwright/
+# Configuration files with sensitive data
+config.env
+.env.local
+.env.production
 
-# 🔧 Streamlit 캐시
-.streamlit/
-
-# 📄 대용량 파일 (100MB 이상)
-*.zip
-*.tar.gz
-*.rar
-*.7z
-
-# 🚀 배포 관련
-.deploy/
-.github/workflows/ 
+# Cache directories
+.cache/
+cache/ 
