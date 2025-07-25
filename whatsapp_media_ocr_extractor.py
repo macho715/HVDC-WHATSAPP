@@ -12,7 +12,7 @@ import re
 import hashlib
 import unicodedata
 import warnings
-from datetime import datetime                    # ⇦ already existed
+from datetime import datetime, timezone          # S‑06
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import logging
@@ -27,11 +27,11 @@ class RateLimiter:
     """
     def __init__(self, rate: int, per: int = 60):
         self.rate, self.per = rate, per
-        self.allowance, self.last = rate, datetime.utcnow()
+        self.allowance, self.last = rate, datetime.now(timezone.utc)  # S‑06
 
     async def acquire(self):
         """await this before every request"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)  # S‑06
         delta = (now - self.last).total_seconds()
         self.last = now
         self.allowance = min(self.rate, self.allowance + delta * (self.rate / self.per))
@@ -772,7 +772,7 @@ class WhatsAppMediaOCRExtractor:
             os.makedirs(download_dir, exist_ok=True)
             
             # 파일명 생성
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")  # S‑06
             filename = f"whatsapp_media_{timestamp}.jpg"
             filepath = os.path.join(download_dir, filename)
             
@@ -808,8 +808,8 @@ class WhatsAppMediaOCRExtractor:
     async def save_results(self, results: List[Dict[str, Any]], output_file: str):
         """결과 저장"""
         try:
-            output_data = {
-                'timestamp': datetime.now().isoformat(),
+            output_data = {                        # S‑06
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'total_processed': len(results),
                 'successful': len([r for r in results if 'error' not in r]),
                 'results': results
@@ -960,7 +960,7 @@ async def main():
         # 오류 발생 시에도 결과 저장 시도
         try:
             error_result = {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),  # S‑06
                 'error': str(e),
                 'total_processed': 0,
                 'successful': 0,
@@ -976,8 +976,12 @@ async def main():
     
     finally:
         # 브라우저 정리
-        try:
+        try:                                      # S‑07
             if context:
+                # 모든 페이지 먼저 닫기 → race condition 예방
+                for p in context.pages:
+                    if not p.is_closed():
+                        await p.close()
                 await context.close()
                 print("✅ 브라우저 컨텍스트 정리 완료")
         except Exception as e:
