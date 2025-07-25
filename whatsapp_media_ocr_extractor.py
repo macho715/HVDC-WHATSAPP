@@ -977,15 +977,23 @@ async def main():
     finally:
         # 브라우저 정리
         try:                                      # S‑07
-            if context:
+            if context and not context.is_closed():
                 # 모든 페이지 먼저 닫기 → race condition 예방
                 for p in context.pages:
-                    if not p.is_closed():
-                        await p.close()
-                await context.close()
-                print("✅ 브라우저 컨텍스트 정리 완료")
+                    try:
+                        if not p.is_closed():
+                            await p.close()
+                    except Exception as page_error:
+                        print(f"⚠️ 페이지 정리 중 오류 (무시): {str(page_error)}")
+                
+                # 컨텍스트가 여전히 열려있는지 확인 후 종료
+                if not context.is_closed():
+                    await context.close()
+                    print("✅ 브라우저 컨텍스트 정리 완료")
+                else:
+                    print("✅ 브라우저 컨텍스트 이미 종료됨")
         except Exception as e:
-            print(f"⚠️ 브라우저 정리 중 오류: {str(e)}")
+            print(f"⚠️ 브라우저 정리 중 오류 (정상 종료): {str(e)}")
 
 if __name__ == "__main__":
     asyncio.run(main()) 
