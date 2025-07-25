@@ -860,7 +860,6 @@ async def main():
     try:
         async with async_playwright() as p:
             print("🔄 Playwright 초기화 중...")
-            browser = p.chromium  # S‑08: 브라우저 참조 저장
             context = await extractor.setup_browser_context(p)
             
             # launch_persistent_context는 이미 페이지를 포함하므로 새로 생성하지 않음
@@ -981,16 +980,14 @@ async def main():
     
     finally:
         # ---------- S‑08 종료 루틴 개선 ----------
-        if browser:
+        if context:
             try:
-                await browser.close()          # 1) 브라우저 우선
-                print("✅ 브라우저 종료 완료")
+                await context.close()          # 컨텍스트 종료
+                print("✅ 브라우저 컨텍스트 종료 완료")
             except Error as e:
                 # 이미 종료된 경우라면 무시
                 if "Target page, context or browser has been closed" not in str(e):
-                    raise
-        # Playwright 프로세스 종료
-        await playwright.stop()
+                    print(f"⚠️ 컨텍스트 종료 중 오류 (정상 종료): {str(e)}")
         # ----------------------------------------
 
 if __name__ == "__main__":
