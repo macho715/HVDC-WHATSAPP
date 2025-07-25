@@ -58,7 +58,7 @@ warnings.filterwarnings(
 )
 
 # Playwright imports
-from playwright.async_api import async_playwright, Page, Browser
+from playwright.async_api import async_playwright, Page, Browser, Error   # S‑08
 
 # OCR imports
 try:
@@ -597,7 +597,11 @@ class WhatsAppMediaOCRExtractor:
         try:
             # 1단계: 돋보기 버튼 클릭
             print("🔍 돋보기 버튼 클릭 중...")
-            await page.click(self.BTN_SEARCH, timeout=5000)
+            try:
+                await page.locator('button[aria-label="Search or start new chat"]').click(timeout=5000)
+            except Error:
+                # UI 업데이트 대응 – title 또는 data-icon 속성 fallback
+                await page.locator('button[title*="Search"]').first.click(timeout=5000)
             print("✅ 돋보기 버튼 클릭 성공")
             
         except Exception as e:
@@ -851,11 +855,12 @@ async def main():
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     
     extractor = WhatsAppMediaOCRExtractor(args.chat)
-    context = None
+    browser = context = page = None          # S‑08
     
     try:
         async with async_playwright() as p:
             print("🔄 Playwright 초기화 중...")
+            browser = p.chromium  # S‑08: 브라우저 참조 저장
             context = await extractor.setup_browser_context(p)
             
             # launch_persistent_context는 이미 페이지를 포함하므로 새로 생성하지 않음
@@ -975,25 +980,18 @@ async def main():
             pass
     
     finally:
-        # 브라우저 정리
-        try:                                      # S‑07
-            if context:
-                # 모든 페이지 먼저 닫기 → race condition 예방
-                for p in context.pages:
-                    try:
-                        if not p.is_closed():
-                            await p.close()
-                    except Exception as page_error:
-                        print(f"⚠️ 페이지 정리 중 오류 (무시): {str(page_error)}")
-                
-                # 컨텍스트 종료
-                try:
-                    await context.close()
-                    print("✅ 브라우저 컨텍스트 정리 완료")
-                except Exception as context_error:
-                    print(f"⚠️ 컨텍스트 정리 중 오류 (정상 종료): {str(context_error)}")
-        except Exception as e:
-            print(f"⚠️ 브라우저 정리 중 오류 (정상 종료): {str(e)}")
+        # ---------- S‑08 종료 루틴 개선 ----------
+        if browser:
+            try:
+                await browser.close()          # 1) 브라우저 우선
+                print("✅ 브라우저 종료 완료")
+            except Error as e:
+                # 이미 종료된 경우라면 무시
+                if "Target page, context or browser has been closed" not in str(e):
+                    raise
+        # Playwright 프로세스 종료
+        await playwright.stop()
+        # ----------------------------------------
 
 if __name__ == "__main__":
     asyncio.run(main()) 
