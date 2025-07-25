@@ -132,8 +132,10 @@ class HVDCWhatsAppExtractor:
             print("✅ 세션 로드 완료")
         else:
             print("🆕 새 세션 생성...")
-            browser = await playwright.chromium.launch(headless=False)
-            context = await browser.new_context(
+            context = await playwright.chromium.launch_persistent_context(
+                user_data_dir="./browser_data",
+                headless=False,
+                args=["--disable-blink-features=AutomationControlled"],
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
                 viewport={"width": 1280, "height": 900}
             )
@@ -310,7 +312,6 @@ class HVDCWhatsAppExtractor:
         async with async_playwright() as p:
             context = await self.setup_browser_context(p)
             page = await context.new_page()
-            browser = context = page = None          # S‑08
             
             try:
                 # WhatsApp Web 접속 및 로그인
