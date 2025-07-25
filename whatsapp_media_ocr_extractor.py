@@ -12,11 +12,34 @@ import re
 import hashlib
 import unicodedata
 import warnings
-from datetime import datetime
+from datetime import datetime                    # ⇦ already existed
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import logging
 import sys
+
+# === S‑02: Token‑Bucket Rate Limiter ==================
+class RateLimiter:
+    """
+    Simple token‑bucket rate limiter
+    ‑ rate : allowed tokens
+    ‑ per  : refill period (sec)
+    """
+    def __init__(self, rate: int, per: int = 60):
+        self.rate, self.per = rate, per
+        self.allowance, self.last = rate, datetime.utcnow()
+
+    async def acquire(self):
+        """await this before every request"""
+        now = datetime.utcnow()
+        delta = (now - self.last).total_seconds()
+        self.last = now
+        self.allowance = min(self.rate, self.allowance + delta * (self.rate / self.per))
+        if self.allowance < 1:
+            # sleep for remaining time
+            await asyncio.sleep((1 - self.allowance) * (self.per / self.rate))
+        self.allowance -= 1
+# =====================================================
 
 # Google Cloud Vision import
 try:
@@ -276,8 +299,21 @@ class WhatsAppMediaOCRExtractor:
     
     def __init__(self, chat_name: str = "HVDC 물류팀"):
         self.chat_name = chat_name
-        self.auth_file = "auth_backups/whatsapp_auth.json"
+        # === S‑04 Secrets Vault ENV 스위치 =============
+        self.auth_file = os.environ.get(
+            "WAPP_AUTH_FILE",
+            "auth_backups/whatsapp_auth.json"
+        )
+        gcv_key_file = os.environ.get("GCV_KEY_FILE")
+        if gcv_key_file:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcv_key_file
+        # ===============================================
+
         self.ocr_processor = MediaOCRProcessor()
+
+        # === S‑02 RateLimiter 인스턴스 ==================
+        self.rate_limiter = RateLimiter(rate=20, per=60)   # 20 요청/min
+        # ===============================================
         
         # 채팅방별 고유한 user_data_dir 설정
         self.user_data_dir = get_unique_user_data_dir(chat_name)
@@ -518,7 +554,8 @@ class WhatsAppMediaOCRExtractor:
                 timeout=300000,  # 5분
                 args=[
                     "--no-sandbox",
-                    "--disable-dev-shm-usage"
+                    "--disable-dev-shm-usage",
+                    "--disable-blink-features=AutomationControlled"  # S‑01
                 ],
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
                 viewport={"width": 1280, "height": 900},
@@ -529,6 +566,15 @@ class WhatsAppMediaOCRExtractor:
             context.set_default_timeout(300000)  # 5분
             context.set_default_navigation_timeout(300000)  # 5분
             
+            # === S‑01 Stealth JS Patch =================
+            stealth_js = """
+                Object.defineProperty(navigator,'webdriver',{get:()=>undefined});
+                Object.defineProperty(navigator,'languages',{get:()=>['en-US','en']});
+                Object.defineProperty(navigator,'plugins',{get:()=>[1,2,3,4,5]});
+            """
+            for p in context.pages:
+                await p.add_init_script(stealth_js)
+            # ===========================================
             print("✅ 완전히 새로운 브라우저 컨텍스트 설정 완료")
             return context
             
@@ -730,6 +776,8 @@ class WhatsAppMediaOCRExtractor:
             filename = f"whatsapp_media_{timestamp}.jpg"
             filepath = os.path.join(download_dir, filename)
             
+            # === S‑02 속도제한 =========================
+            await self.rate_limiter.acquire()
             # 파일 다운로드
             await element.screenshot(path=filepath)
             
@@ -773,6 +821,18 @@ class WhatsAppMediaOCRExtractor:
             logger.info(f"Results saved to {output_file}")
         except Exception as e:
             logger.error(f"Error saving results: {e}")
+
+# === S‑03 : Ban Banner Watch Helper ===================
+async def detect_ban(page) -> bool:
+    """
+    Returns True if WhatsApp 'Temporarily banned' banner is present.
+    """
+    try:
+        await page.wait_for_selector('text="Temporarily banned"', timeout=15000)
+        return True
+    except:
+        return False
+# =====================================================
 
 async def main():
     """메인 함수"""
@@ -839,6 +899,11 @@ async def main():
             # 페이지가 완전히 로드될 때까지 대기
             await page.wait_for_timeout(3000)  # 3초 대기
             
+            # Ban Banner 사전 감지
+            if await detect_ban(page):
+                logger.error("🛑 BAN banner detected—exiting (ZERO mode)")
+                return
+
             # 미디어 메시지 찾기
             print(f"🔍 채팅방 '{args.chat}'에서 미디어 검색 중...")
             media_elements = await extractor.find_media_messages(page, args.chat)
@@ -857,6 +922,11 @@ async def main():
                 print(f"📱 미디어 처리 중... ({i+1}/{min(len(media_elements), args.max_media)})")
                 
                 try:
+                    # Ban banner 실시간 감지 (loop 중)
+                    if await detect_ban(page):
+                        logger.error("🛑 BAN banner detected—stopping process")
+                        break
+
                     # 미디어 다운로드
                     file_path = await extractor.download_media(element, download_dir)
                     if not file_path:
