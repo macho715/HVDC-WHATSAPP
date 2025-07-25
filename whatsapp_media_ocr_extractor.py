@@ -58,7 +58,8 @@ warnings.filterwarnings(
 )
 
 # Playwright imports
-from playwright.async_api import async_playwright, Page, Browser, Error   # S‑08
+from playwright.async_api import Page, Error
+from session_manager import get_shared_session, close_shared_session
 
 # OCR imports
 try:
@@ -315,8 +316,8 @@ class WhatsAppMediaOCRExtractor:
         self.rate_limiter = RateLimiter(rate=20, per=60)   # 20 요청/min
         # ===============================================
         
-        # 채팅방별 고유한 user_data_dir 설정
-        self.user_data_dir = get_unique_user_data_dir(chat_name)
+        # 공유 세션 디렉토리
+        self.user_data_dir = "browser_data/shared_session"
         
         # 미디어 셀렉터들
         self.media_selectors = [
@@ -858,105 +859,104 @@ async def main():
     browser = context = page = None          # S‑08
     
     try:
-        async with async_playwright() as p:
-            print("🔄 Playwright 초기화 중...")
-            context = await extractor.setup_browser_context(p)
+        print("🔄 공유 세션 사용 중...")
+        context = await get_shared_session()
+        
+        # launch_persistent_context는 이미 페이지를 포함하므로 새로 생성하지 않음
+        page = context.pages[0] if context.pages else await context.new_page()
+        
+        print("🌐 WhatsApp Web 접속 중...")
+        # WhatsApp Web 접속
+        await page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded", timeout=300000)
+        print("✅ WhatsApp Web 접속 완료")
+        
+        # 로그인 상태 확인 (완전히 새로운 방식)
+        print("🔍 로그인 상태 확인 중...")
+        login_success = False
+        
+        try:
+            # 브라우저가 닫혔는지 먼저 확인
+            if page.is_closed():
+                raise RuntimeError("브라우저가 닫혔습니다.")
             
-            # launch_persistent_context는 이미 페이지를 포함하므로 새로 생성하지 않음
-            page = context.pages[0] if context.pages else await context.new_page()
+            # 먼저 짧은 시간으로 확인
+            await page.wait_for_selector("#side", timeout=15000)
+            print("✅ 이미 로그인된 상태")
+            login_success = True
+        except Exception as initial_check_error:
+            print(f"⚠️ 초기 로그인 확인 실패: {str(initial_check_error)}")
+            print("⚠️ 로그인이 필요합니다. QR 코드를 스캔해주세요 (3분 제한).")
             
-            print("🌐 WhatsApp Web 접속 중...")
-            # WhatsApp Web 접속
-            await page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded", timeout=300000)
-            print("✅ WhatsApp Web 접속 완료")
-            
-            # 로그인 상태 확인 (완전히 새로운 방식)
-            print("🔍 로그인 상태 확인 중...")
-            login_success = False
+            # 브라우저가 닫히지 않았는지 확인하면서 대기
+            try:
+                # 더 짧은 시간으로 대기 (3분)
+                await page.wait_for_selector("#side", timeout=180000)  # 3분
+                print("✅ 로그인 성공!")
+                login_success = True
+            except Exception as login_error:
+                print(f"❌ 로그인 타임아웃: {str(login_error)}")
+                raise RuntimeError("로그인에 실패했습니다. QR 코드를 스캔해주세요.")
+        
+        if not login_success:
+            raise RuntimeError("로그인 상태를 확인할 수 없습니다.")
+        
+        # 페이지가 완전히 로드될 때까지 대기
+        await page.wait_for_timeout(3000)  # 3초 대기
+        
+        # Ban Banner 사전 감지
+        if await detect_ban(page):
+            logger.error("🛑 BAN banner detected—exiting (ZERO mode)")
+            return
+
+        # 미디어 메시지 찾기
+        print(f"🔍 채팅방 '{args.chat}'에서 미디어 검색 중...")
+        media_elements = await extractor.find_media_messages(page, args.chat)
+        
+        if not media_elements:
+            print("⚠️ 미디어 메시지를 찾을 수 없습니다.")
+            return
+        
+        print(f"📱 발견된 미디어: {len(media_elements)}개")
+        
+        # 미디어 처리
+        results = []
+        download_dir = "downloads"
+        
+        for i, element in enumerate(media_elements[:args.max_media]):
+            print(f"📱 미디어 처리 중... ({i+1}/{min(len(media_elements), args.max_media)})")
             
             try:
-                # 브라우저가 닫혔는지 먼저 확인
-                if page.is_closed():
-                    raise RuntimeError("브라우저가 닫혔습니다.")
-                
-                # 먼저 짧은 시간으로 확인
-                await page.wait_for_selector("#side", timeout=15000)
-                print("✅ 이미 로그인된 상태")
-                login_success = True
-            except Exception as initial_check_error:
-                print(f"⚠️ 초기 로그인 확인 실패: {str(initial_check_error)}")
-                print("⚠️ 로그인이 필요합니다. QR 코드를 스캔해주세요 (3분 제한).")
-                
-                # 브라우저가 닫히지 않았는지 확인하면서 대기
-                try:
-                    # 더 짧은 시간으로 대기 (3분)
-                    await page.wait_for_selector("#side", timeout=180000)  # 3분
-                    print("✅ 로그인 성공!")
-                    login_success = True
-                except Exception as login_error:
-                    print(f"❌ 로그인 타임아웃: {str(login_error)}")
-                    raise RuntimeError("로그인에 실패했습니다. QR 코드를 스캔해주세요.")
-            
-            if not login_success:
-                raise RuntimeError("로그인 상태를 확인할 수 없습니다.")
-            
-            # 페이지가 완전히 로드될 때까지 대기
-            await page.wait_for_timeout(3000)  # 3초 대기
-            
-            # Ban Banner 사전 감지
-            if await detect_ban(page):
-                logger.error("🛑 BAN banner detected—exiting (ZERO mode)")
-                return
+                # Ban banner 실시간 감지 (loop 중)
+                if await detect_ban(page):
+                    logger.error("🛑 BAN banner detected—stopping process")
+                    break
 
-            # 미디어 메시지 찾기
-            print(f"🔍 채팅방 '{args.chat}'에서 미디어 검색 중...")
-            media_elements = await extractor.find_media_messages(page, args.chat)
-            
-            if not media_elements:
-                print("⚠️ 미디어 메시지를 찾을 수 없습니다.")
-                return
-            
-            print(f"📱 발견된 미디어: {len(media_elements)}개")
-            
-            # 미디어 처리
-            results = []
-            download_dir = "downloads"
-            
-            for i, element in enumerate(media_elements[:args.max_media]):
-                print(f"📱 미디어 처리 중... ({i+1}/{min(len(media_elements), args.max_media)})")
+                # 미디어 다운로드
+                file_path = await extractor.download_media(element, download_dir)
+                if not file_path:
+                    continue
                 
-                try:
-                    # Ban banner 실시간 감지 (loop 중)
-                    if await detect_ban(page):
-                        logger.error("🛑 BAN banner detected—stopping process")
-                        break
-
-                    # 미디어 다운로드
-                    file_path = await extractor.download_media(element, download_dir)
-                    if not file_path:
-                        continue
-                    
-                    # OCR 처리
-                    result = await extractor.process_media_file(file_path, args.ocr_engine)
-                    result['file_path'] = file_path
-                    results.append(result)
-                    
-                    print(f"✅ 미디어 {i+1} 처리 완료")
-                    
-                except Exception as e:
-                    print(f"❌ 미디어 {i+1} 처리 실패: {str(e)}")
-                    results.append({
-                        'error': str(e),
-                        'file_path': 'unknown',
-                        'confidence': 0.0
-                    })
-            
-            # 결과 저장
-            await extractor.save_results(results, args.output)
-            
-            print(f"✅ 미디어 OCR 처리 완료! 결과 저장: {args.output}")
-            print(f"📊 처리 결과: {len(results)}개 중 {len([r for r in results if 'error' not in r])}개 성공")
-            
+                # OCR 처리
+                result = await extractor.process_media_file(file_path, args.ocr_engine)
+                result['file_path'] = file_path
+                results.append(result)
+                
+                print(f"✅ 미디어 {i+1} 처리 완료")
+                
+            except Exception as e:
+                print(f"❌ 미디어 {i+1} 처리 실패: {str(e)}")
+                results.append({
+                    'error': str(e),
+                    'file_path': 'unknown',
+                    'confidence': 0.0
+                })
+        
+        # 결과 저장
+        await extractor.save_results(results, args.output)
+        
+        print(f"✅ 미디어 OCR 처리 완료! 결과 저장: {args.output}")
+        print(f"📊 처리 결과: {len(results)}개 중 {len([r for r in results if 'error' not in r])}개 성공")
+        
     except Exception as e:
         logger.error(f"❌ 실행 중 오류 발생: {str(e)}")
         print(f"❌ 오류 발생: {str(e)}")
@@ -978,17 +978,7 @@ async def main():
         except:
             pass
     
-    finally:
-        # ---------- S‑08 종료 루틴 개선 ----------
-        if context:
-            try:
-                await context.close()          # 컨텍스트 종료
-                print("✅ 브라우저 컨텍스트 종료 완료")
-            except Error as e:
-                # 이미 종료된 경우라면 무시
-                if "Target page, context or browser has been closed" not in str(e):
-                    print(f"⚠️ 컨텍스트 종료 중 오류 (정상 종료): {str(e)}")
-        # ----------------------------------------
+    # 세션 유지 - 종료 호출 제거
 
 if __name__ == "__main__":
     asyncio.run(main()) 

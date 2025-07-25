@@ -156,4 +156,4 @@ config.env
 
 # Cache directories
 .cache/
-cache/ 
+cache/

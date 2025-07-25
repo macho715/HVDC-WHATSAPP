@@ -31,6 +31,9 @@ except ImportError as e:
     print(f"❌ MACHO-GPT 모듈 import 오류: {e}")
     sys.exit(1)
 
+# 세션 매니저 import
+from session_manager import get_shared_session, close_shared_session
+
 # 로깅 설정
 logging.basicConfig(
     level=logging.INFO,
@@ -67,8 +70,8 @@ class HVDCWhatsAppExtractor:
             'input[type="text"]'
         ]
         
-        # 세션 파일 경로
-        self.auth_file = "auth_backups/whatsapp_auth.json"
+        # 공유 세션 디렉토리
+        self.user_data_dir = "browser_data/shared_session"
         
         print("✅ HVDC WhatsApp 추출기 초기화 완료 (키워드 토큰화 + 부분 일치 검색)")
     
@@ -119,32 +122,9 @@ class HVDCWhatsAppExtractor:
         return tokens
     
     async def setup_browser_context(self, playwright):
-        """브라우저 컨텍스트 설정 (세션 저장/로드)"""
-        # 세션 파일이 있으면 로드, 없으면 새로 생성
-        if Path(self.auth_file).exists():
-            print("🔄 저장된 세션 로드 중...")
-            context = await playwright.chromium.launch_persistent_context(
-                user_data_dir="./browser_data",
-                headless=False,
-                args=["--disable-blink-features=AutomationControlled"],
-                viewport={"width": 1280, "height": 900}  # 넓은 뷰포트로 돋보기 버튼 가려짐 방지
-            )
-            print("✅ 세션 로드 완료")
-        else:
-            print("🆕 새 세션 생성...")
-            context = await playwright.chromium.launch_persistent_context(
-                user_data_dir="./browser_data",
-                headless=False,
-                args=["--disable-blink-features=AutomationControlled"],
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                viewport={"width": 1280, "height": 900}
-            )
-            print("✅ 새 세션 생성 완료")
-        
-        # 전역 타임아웃 설정 (네트워크 지연 대응)
-        context.set_default_timeout(60000)
-        
-        return context
+        """브라우저 컨텍스트 설정 (공유 세션 사용)"""
+        # 공유 세션 사용
+        return await get_shared_session()
     
     async def find_and_activate_search_box(self, page):
         """돋보기 버튼 클릭 후 검색창 찾기 및 활성화 (개선된 버전)"""
@@ -307,69 +287,53 @@ class HVDCWhatsAppExtractor:
         print("=" * 60)
         
         results = []
-        from playwright.async_api import async_playwright, TimeoutError, Error   # S‑08
+        from playwright.async_api import TimeoutError, Error   # S‑08
 
-        async with async_playwright() as p:
-            context = await self.setup_browser_context(p)
-            page = await context.new_page()
+        # 공유 세션 사용
+        context = await get_shared_session()
+        page = await context.new_page()
+        
+        try:
+            # WhatsApp Web 접속 및 로그인
+            await page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded")
             
+            # 로그인 상태 확인
             try:
-                # WhatsApp Web 접속 및 로그인
-                await page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded")
-                
-                # 세션 파일이 없으면 QR 코드 스캔 대기
-                if not Path(self.auth_file).exists():
-                    print("⚠️ WhatsApp 웹에 접속합니다. QR 코드를 스캔하여 로그인해주세요 (2분 제한).")
-                    await page.wait_for_selector("#side", timeout=120000)
-                    print("✅ 로그인 성공!")
+                await page.wait_for_selector("#side", timeout=10000)
+                print("✅ 이미 로그인된 상태")
+            except:
+                print("⚠️ WhatsApp 웹에 접속합니다. QR 코드를 스캔하여 로그인해주세요 (2분 제한).")
+                await page.wait_for_selector("#side", timeout=120000)
+                print("✅ 로그인 성공!")
+
+            for chat_title in self.hvdc_chats:
+                print(f"\n📱 채팅방 처리 중: {chat_title}")
+                try:
+                    result = await self.extract_single_chat(page, chat_title)
+                    results.append(result)
                     
-                    # 로그인 후 세션 저장
-                    try:
-                        await context.storage_state(path=self.auth_file)
-                        print("💾 세션 저장 완료")
-                    except Exception as e:
-                        print(f"⚠️ 세션 저장 실패: {str(e)}")
-                else:
-                    print("✅ 저장된 세션으로 자동 로그인")
+                    if result['status'] == 'SUCCESS':
+                        print(f"✅ 추출 성공: {result['message_count']}개 메시지")
+                    else:
+                        print(f"❌ 추출 실패: {result.get('error', 'Unknown error')}")
+                    
+                    await asyncio.sleep(2) # 채팅방 간 짧은 대기
+                    
+                except Exception as e:
+                    error_message = f"처리 중 예외 발생: {str(e)}"
+                    print(f"❌ {error_message}")
+                    results.append({
+                        'status': 'ERROR', 'chat_title': chat_title, 'error': error_message,
+                        'timestamp': datetime.now().isoformat()
+                    })
 
-                for chat_title in self.hvdc_chats:
-                    print(f"\n📱 채팅방 처리 중: {chat_title}")
-                    try:
-                        result = await self.extract_single_chat(page, chat_title)
-                        results.append(result)
-                        
-                        if result['status'] == 'SUCCESS':
-                            print(f"✅ 추출 성공: {result['message_count']}개 메시지")
-                        else:
-                            print(f"❌ 추출 실패: {result.get('error', 'Unknown error')}")
-                        
-                        await asyncio.sleep(2) # 채팅방 간 짧은 대기
-                        
-                    except Exception as e:
-                        error_message = f"처리 중 예외 발생: {str(e)}"
-                        print(f"❌ {error_message}")
-                        results.append({
-                            'status': 'ERROR', 'chat_title': chat_title, 'error': error_message,
-                            'timestamp': datetime.now().isoformat()
-                        })
-
-            except TimeoutError:
-                print("❌ 로그인 시간(2분)이 초과되었습니다. QR 코드 스캔을 다시 시도해주세요.")
-                logger.error("Login timeout exceeded.")
-            except Exception as e:
-                print(f"❌ 오류 발생: {str(e)}")
-                logger.error(f"Browser automation error: {str(e)}")
-            finally:
-                # ---------- S‑08 종료 루틴 개선 ----------
-                if context:
-                    try:
-                        await context.close()          # 컨텍스트 종료
-                        print("✅ 브라우저 컨텍스트 종료 완료")
-                    except Error as e:
-                        # 이미 종료된 경우라면 무시
-                        if "Target page, context or browser has been closed" not in str(e):
-                            print(f"⚠️ 컨텍스트 종료 중 오류 (정상 종료): {str(e)}")
-                # ----------------------------------------
+        except TimeoutError:
+            print("❌ 로그인 시간(2분)이 초과되었습니다. QR 코드 스캔을 다시 시도해주세요.")
+            logger.error("Login timeout exceeded.")
+        except Exception as e:
+            print(f"❌ 오류 발생: {str(e)}")
+            logger.error(f"Browser automation error: {str(e)}")
+        # 세션 유지 - 종료 호출 제거
         
         return results
     
