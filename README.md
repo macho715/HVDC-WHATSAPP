@@ -1,6 +1,6 @@
 # 🤖 MACHO-GPT v3.4-mini WhatsApp 자동화 시스템
 
-> **Samsung C&T Logistics · ADNOC·DSV Partnership**  
+> **Samsung C&T Logistics · ADNOC·DSV Partnership**
 > **HVDC Project 물류 업무 자동화**
 
 ## 🎯 프로젝트 개요
@@ -9,7 +9,7 @@ MACHO-GPT v3.4-mini는 Samsung C&T Logistics의 HVDC 프로젝트를 위한 What
 
 ## 📊 현재 시스템 상태
 
-- ✅ **Executive Dashboard**: http://localhost:8505 
+- ✅ **Executive Dashboard**: http://localhost:8505
 - ✅ **Simplified App**: http://localhost:8506
 - ✅ **Integrated App**: http://localhost:8507
 - 🔄 **Confidence**: 90.0% (PRIME 모드)
@@ -86,6 +86,7 @@ HVDC-WHATSAPP/
 - 🎯 긴급/중요 메시지 자동 분류
 - 📊 대화 내용 AI 요약
 - 🔄 실시간 업무 상태 모니터링
+- 🆕 **멀티 그룹 병렬 스크래핑** (여러 그룹 동시 처리)
 
 ### 🏢 **비즈니스 워크플로우**
 - 👥 팀별 채팅룸 관리 (5개 룸)
@@ -120,6 +121,15 @@ HVDC-WHATSAPP/
 - 📊 **다양한 출력 형식** JSON, 파일 저장, 상세 표시
 - 🎯 **Role Configuration 지원** MACHO-GPT 역할 주입
 - 📈 **신뢰도 점수** 처리 품질 자동 평가
+
+### 🔄 **NEW: Multi-Group Scraping (v3.4-mini)**
+- 🚀 **병렬 스크래핑** 여러 WhatsApp 그룹 동시 처리
+- ⚡ **비동기 처리** asyncio 기반 고성능 실행
+- 📋 **YAML 설정** 간편한 그룹 관리 (우선순위, 간격 설정)
+- 🎯 **우선순위 시스템** HIGH/MEDIUM/LOW 자동 스케줄링
+- 🧪 **TDD 검증** 25+ 테스트로 안정성 보장
+- 📊 **Streamlit 통합** 웹 기반 모니터링 UI
+- 🔗 **하위 호환성** 기존 단일 그룹 기능 유지
 
 ## 🎨 사용자 인터페이스
 
@@ -206,6 +216,74 @@ python scripts/whatsapp_summary_cli.py chat.txt \
 | `--verbose, -v` | 상세 정보 출력 | False |
 | `--save, -s` | 결과를 파일로 저장 | False |
 | `--output, -o` | 출력 파일 경로 | 자동 생성 |
+
+## 🔄 Multi-Group Scraping 사용법
+
+### 🚀 **빠른 시작**
+
+#### 1. 설정 파일 생성
+`configs/multi_group_config.yaml` 파일 생성:
+
+```yaml
+groups:
+  - name: "MR.CHA 전용"
+    save_file: "data/mr_cha_messages.json"
+    scrape_interval: 60
+    priority: "HIGH"
+  - name: "HVDC Logistics"
+    save_file: "data/hvdc_logistics_messages.json"
+    scrape_interval: 120
+    priority: "MEDIUM"
+
+scraper_settings:
+  headless: true
+  timeout: 45000
+  max_parallel_groups: 3
+
+ai_settings:
+  enable_ai_summary: true
+  confidence_threshold: 0.85
+  ai_model: "gpt-4o-mini"
+```
+
+#### 2. CLI 실행
+```bash
+# 기본 실행
+python run_multi_group_scraper.py --config configs/multi_group_config.yaml
+
+# 제한된 병렬 처리 (리소스 절약)
+python run_multi_group_scraper.py --config configs/multi_group_config.yaml --limited-parallel
+
+# Dry-run (설정만 확인)
+python run_multi_group_scraper.py --config configs/multi_group_config.yaml --dry-run
+```
+
+#### 3. Streamlit 대시보드
+```bash
+streamlit run simplified_whatsapp_app.py
+
+# 브라우저에서 http://localhost:8501 접속
+# "🔄 멀티 그룹" 탭에서 설정 및 상태 확인
+```
+
+### 📊 **주요 기능**
+
+| 기능 | 설명 |
+|------|------|
+| **병렬 스크래핑** | 여러 그룹을 동시에 스크래핑 (최대 10개) |
+| **우선순위** | HIGH/MEDIUM/LOW 자동 스케줄링 |
+| **에러 복구** | 그룹별 독립적 에러 처리 |
+| **실시간 모니터링** | 로그 파일 및 대시보드 통합 |
+| **AI 통합** | MACHO-GPT AI 요약 자동 생성 |
+
+### 📖 **상세 가이드**
+
+전체 문서: [Multi-Group Integration Guide](docs/MULTI_GROUP_INTEGRATION_GUIDE.md)
+
+- 설정 파일 상세 설명
+- 병렬 처리 모드 비교
+- 트러블슈팅 가이드
+- API 참조
 
 ## 📋 의존성 요구사항
 
@@ -396,7 +474,7 @@ reporter.create_site_monthly_sheet(site_data)
 
 ## 📜 라이선스
 
-이 프로젝트는 Samsung C&T의 독점 소프트웨어입니다. 
+이 프로젝트는 Samsung C&T의 독점 소프트웨어입니다.
 사용 전 라이선스 계약을 확인하시기 바랍니다.
 
 ---
@@ -408,4 +486,4 @@ reporter.create_site_monthly_sheet(site_data)
 3. **앱 실행**: `python run_app.py`
 4. **브라우저 접속**: http://localhost:8507
 
-**🎉 축하합니다! MACHO-GPT v3.4-mini가 실행됩니다.** 
+**🎉 축하합니다! MACHO-GPT v3.4-mini가 실행됩니다.**
