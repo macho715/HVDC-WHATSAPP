@@ -263,10 +263,27 @@ async def main():
     """메인 함수"""
     import argparse
     
-    parser = argparse.ArgumentParser(description="MACHO-GPT v3.4-mini WhatsApp 자동 추출")
+    parser = argparse.ArgumentParser(
+        description="MACHO-GPT v3.4-mini WhatsApp 자동 추출"
+    )
     parser.add_argument("--setup", action="store_true", help="WhatsApp 인증 설정")
+    parser.add_argument(
+        "--run",
+        action="store_true",
+        help="WhatsApp 자동 추출 실행 / Run WhatsApp extraction",
+    )
     parser.add_argument("--no-proxy", action="store_true", help="프록시 사용 안함")
-    parser.add_argument("--chat", type=str, default=CHAT_TITLE, help="채팅방 제목")
+    parser.add_argument(
+        "--chat",
+        type=str,
+        default=CHAT_TITLE,
+        help="채팅방 제목 설정 (호환 목적) / Set chat title (legacy)",
+    )
+    parser.add_argument(
+        "--room",
+        type=str,
+        help="채팅방 제목 별칭 / Alternate chat title option",
+    )
     
     args = parser.parse_args()
     
@@ -274,7 +291,7 @@ async def main():
         # 인증 설정
         print("🔐 WhatsApp Web 인증 설정")
         print("⚠️  playwright-stealth 없음. 기본 스텔스 모드로 실행")
-        
+
         try:
             from auth_setup import WhatsAppAuthSetup
             auth_setup = WhatsAppAuthSetup()
@@ -286,7 +303,14 @@ async def main():
         except ImportError:
             print("❌ auth_setup.py를 찾을 수 없습니다.")
         return
-    
+
+    # 채팅방 별칭 처리
+    if args.room:
+        args.chat = args.room
+
+    if not args.run:
+        print("ℹ️ --run 옵션이 지정되지 않아 기본 실행 모드로 계속합니다.")
+
     # 메인 실행
     print("🚀 MACHO-GPT v3.4-mini WhatsApp 자동 추출 시작")
     print(f"📅 실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
