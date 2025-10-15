@@ -14,6 +14,7 @@ from typing import Dict, List, Any, Optional
 # Streamlit 안전한 import
 try:
     import streamlit as st
+
     STREAMLIT_AVAILABLE = True
 except ImportError:
     print("❌ Streamlit이 설치되지 않았습니다: pip install streamlit")
@@ -22,6 +23,7 @@ except ImportError:
 # Pandas 안전한 import
 try:
     import pandas as pd
+
     PANDAS_AVAILABLE = True
 except ImportError:
     print("⚠️  Pandas 없음. 기본 기능으로 실행")
@@ -30,6 +32,7 @@ except ImportError:
 # OpenAI 안전한 import
 try:
     import openai
+
     OPENAI_AVAILABLE = True
 except ImportError:
     print("⚠️  OpenAI 없음. Mock 요약 기능 사용")
@@ -38,80 +41,110 @@ except ImportError:
 # MACHO-GPT 모듈 안전한 import
 try:
     from macho_gpt import get_system_status, WORKFLOW_AVAILABLE
+
     if WORKFLOW_AVAILABLE:
-        from macho_gpt.core.logi_workflow_241219 import workflow_manager, ChatRoomType, TaskPriority, TaskStatus
+        from macho_gpt.core.logi_workflow_241219 import (
+            workflow_manager,
+            ChatRoomType,
+            TaskPriority,
+            TaskStatus,
+        )
     MACHO_GPT_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️  MACHO-GPT 모듈 없음: {e}")
     MACHO_GPT_AVAILABLE = False
     WORKFLOW_AVAILABLE = False
 
+# Multi-Group Scraper 모듈 안전한 import
+try:
+    from macho_gpt.async_scraper.group_config import MultiGroupConfig
+    from macho_gpt.async_scraper.multi_group_manager import MultiGroupManager
+
+    MULTI_GROUP_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  Multi-Group Scraper 모듈 없음: {e}")
+    MULTI_GROUP_AVAILABLE = False
+
 # 설정
 DB_FILE = Path("summaries.json")
+
 
 def load_db() -> Dict[str, Dict]:
     """데이터베이스 로딩"""
     try:
         if DB_FILE.exists():
-            with open(DB_FILE, 'r', encoding='utf-8') as f:
+            with open(DB_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception as e:
         print(f"DB 로딩 오류: {e}")
     return {}
 
+
 def save_db(db: Dict[str, Dict]):
     """데이터베이스 저장"""
     try:
-        with open(DB_FILE, 'w', encoding='utf-8') as f:
+        with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(db, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"DB 저장 오류: {e}")
 
+
 def mock_llm_summarise(text: str) -> Dict[str, Any]:
     """Mock AI 요약 함수"""
-    lines = text.split('\n')
+    lines = text.split("\n")
     word_count = len(text.split())
-    
+
     # 간단한 키워드 추출
     keywords = []
     for line in lines[:10]:  # 첫 10줄만 분석
-        if any(word in line.lower() for word in ['긴급', '중요', '완료', '확인', '검토', '승인', '마감']):
+        if any(
+            word in line.lower()
+            for word in ["긴급", "중요", "완료", "확인", "검토", "승인", "마감"]
+        ):
             keywords.append(line.strip())
-    
+
     return {
-        'summary': f"WhatsApp 대화 분석 결과\\n- 총 {len(lines)}개 메시지\\n- {word_count}단어\\n- 주요 키워드: {len(keywords)}개 발견",
-        'tasks': keywords[:5] if keywords else ["대화 내용 검토 필요"],
-        'confidence': 0.75,
-        'analysis_time': datetime.now().isoformat()
+        "summary": f"WhatsApp 대화 분석 결과\\n- 총 {len(lines)}개 메시지\\n- {word_count}단어\\n- 주요 키워드: {len(keywords)}개 발견",
+        "tasks": keywords[:5] if keywords else ["대화 내용 검토 필요"],
+        "confidence": 0.75,
+        "analysis_time": datetime.now().isoformat(),
     }
+
 
 def real_llm_summarise(text: str) -> Dict[str, Any]:
     """실제 OpenAI 요약 함수"""
     try:
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "당신은 WhatsApp 대화를 분석하는 AI입니다. 한국어로 요약하고 중요한 작업을 추출하세요."},
-                {"role": "user", "content": f"다음 대화를 요약하고 중요한 작업들을 추출해주세요:\\n\\n{text}"}
+                {
+                    "role": "system",
+                    "content": "당신은 WhatsApp 대화를 분석하는 AI입니다. 한국어로 요약하고 중요한 작업을 추출하세요.",
+                },
+                {
+                    "role": "user",
+                    "content": f"다음 대화를 요약하고 중요한 작업들을 추출해주세요:\\n\\n{text}",
+                },
             ],
             max_tokens=500,
-            temperature=0.3
+            temperature=0.3,
         )
-        
+
         content = response.choices[0].message.content
-        
+
         return {
-            'summary': content,
-            'tasks': content.split('\\n')[:5],  # 간단히 첫 5줄을 task로
-            'confidence': 0.90,
-            'analysis_time': datetime.now().isoformat()
+            "summary": content,
+            "tasks": content.split("\\n")[:5],  # 간단히 첫 5줄을 task로
+            "confidence": 0.90,
+            "analysis_time": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         print(f"OpenAI 요약 오류: {e}")
         return mock_llm_summarise(text)
+
 
 def llm_summarise(text: str) -> Dict[str, Any]:
     """AI 요약 메인 함수"""
@@ -120,20 +153,22 @@ def llm_summarise(text: str) -> Dict[str, Any]:
     else:
         return mock_llm_summarise(text)
 
+
 def create_mock_workflow_data():
     """Mock 워크플로우 데이터 생성"""
     return {
-        'total_rooms': 3,
-        'total_tasks': 8,
-        'completion_rate': 0.65,
-        'urgent_tasks': 2,
-        'confidence': 0.85,
-        'teams': {
-            '개발팀': {'tasks': 5, 'members': 3},
-            '마케팅팀': {'tasks': 2, 'members': 2},
-            '디자인팀': {'tasks': 1, 'members': 1}
-        }
+        "total_rooms": 3,
+        "total_tasks": 8,
+        "completion_rate": 0.65,
+        "urgent_tasks": 2,
+        "confidence": 0.85,
+        "teams": {
+            "개발팀": {"tasks": 5, "members": 3},
+            "마케팅팀": {"tasks": 2, "members": 2},
+            "디자인팀": {"tasks": 1, "members": 1},
+        },
     }
+
 
 def main():
     """메인 앱"""
@@ -141,92 +176,92 @@ def main():
         print("❌ Streamlit이 필요합니다: pip install streamlit")
         print("❌ 설치 후 다음 명령어로 실행: streamlit run simplified_whatsapp_app.py")
         return
-    
+
     # 페이지 설정
     st.set_page_config(
-        page_title="MACHO-GPT v3.4-mini Simplified",
-        page_icon="🤖",
-        layout="wide"
+        page_title="MACHO-GPT v3.4-mini Simplified", page_icon="🤖", layout="wide"
     )
-    
+
     # 헤더
     st.title("🤖 MACHO-GPT v3.4-mini WhatsApp 통합 시스템")
     st.caption("Samsung C&T Logistics · HVDC Project Integration (Simplified Mode)")
-    
+
     # 시스템 상태 표시
     with st.container():
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             status = "✅" if STREAMLIT_AVAILABLE else "❌"
             st.metric("Streamlit", status)
-        
+
         with col2:
             status = "✅" if OPENAI_AVAILABLE else "⚠️"
             st.metric("OpenAI", status)
-        
+
         with col3:
             status = "✅" if MACHO_GPT_AVAILABLE else "⚠️"
             st.metric("MACHO-GPT", status)
-        
+
         with col4:
             status = "✅" if WORKFLOW_AVAILABLE else "⚠️"
             st.metric("Workflow", status)
-    
+
     # 탭 생성
-    tab1, tab2, tab3 = st.tabs(["📊 대시보드", "💬 메시지 분석", "📋 데이터 관리"])
-    
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["📊 대시보드", "💬 메시지 분석", "🔄 멀티 그룹", "📋 데이터 관리"]
+    )
+
     with tab1:
         st.header("📊 시스템 대시보드")
-        
+
         # 워크플로우 정보
         if WORKFLOW_AVAILABLE and MACHO_GPT_AVAILABLE:
             try:
                 summary = workflow_manager.get_workflow_summary()
-                
+
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric("총 대화방", summary.get('total_rooms', 0))
+                    st.metric("총 대화방", summary.get("total_rooms", 0))
                 with col2:
-                    st.metric("총 태스크", summary.get('total_tasks', 0))
+                    st.metric("총 태스크", summary.get("total_tasks", 0))
                 with col3:
-                    completion = summary.get('completion_rate', 0) * 100
+                    completion = summary.get("completion_rate", 0) * 100
                     st.metric("완료율", f"{completion:.1f}%")
                 with col4:
-                    st.metric("긴급 태스크", summary.get('urgent_tasks', 0))
-                    
+                    st.metric("긴급 태스크", summary.get("urgent_tasks", 0))
+
             except Exception as e:
                 st.error(f"워크플로우 데이터 로딩 오류: {e}")
                 mock_data = create_mock_workflow_data()
-                
+
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric("총 대화방", mock_data['total_rooms'])
+                    st.metric("총 대화방", mock_data["total_rooms"])
                 with col2:
-                    st.metric("총 태스크", mock_data['total_tasks'])
+                    st.metric("총 태스크", mock_data["total_tasks"])
                 with col3:
-                    completion = mock_data['completion_rate'] * 100
+                    completion = mock_data["completion_rate"] * 100
                     st.metric("완료율", f"{completion:.1f}%")
                 with col4:
-                    st.metric("긴급 태스크", mock_data['urgent_tasks'])
+                    st.metric("긴급 태스크", mock_data["urgent_tasks"])
         else:
             st.info("워크플로우 모듈이 비활성화되어 Mock 데이터를 표시합니다.")
             mock_data = create_mock_workflow_data()
-            
+
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("총 대화방", mock_data['total_rooms'])
+                st.metric("총 대화방", mock_data["total_rooms"])
             with col2:
-                st.metric("총 태스크", mock_data['total_tasks'])
+                st.metric("총 태스크", mock_data["total_tasks"])
             with col3:
-                completion = mock_data['completion_rate'] * 100
+                completion = mock_data["completion_rate"] * 100
                 st.metric("완료율", f"{completion:.1f}%")
             with col4:
-                st.metric("긁급 태스크", mock_data['urgent_tasks'])
-        
+                st.metric("긁급 태스크", mock_data["urgent_tasks"])
+
         # 시스템 정보
         st.subheader("🔧 시스템 정보")
-        
+
         if MACHO_GPT_AVAILABLE:
             try:
                 status = get_system_status()
@@ -235,90 +270,291 @@ def main():
                 st.error(f"시스템 상태 로딩 오류: {e}")
         else:
             st.info("시스템 상태: Simplified Mode (일부 기능 제한)")
-    
+
     with tab2:
         st.header("💬 WhatsApp 메시지 분석")
-        
+
         # 메시지 입력
         message_text = st.text_area(
             "분석할 메시지 입력",
             placeholder="WhatsApp 대화 내용을 여기에 붙여넣으세요...",
-            height=200
+            height=200,
         )
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             if st.button("🤖 AI 분석 실행", type="primary"):
                 if message_text.strip():
                     with st.spinner("AI 분석 중..."):
                         result = llm_summarise(message_text)
-                        
+
                         st.subheader("📋 분석 결과")
-                        st.write(result['summary'])
-                        
+                        st.write(result["summary"])
+
                         st.subheader("📝 추출된 작업")
-                        for i, task in enumerate(result.get('tasks', []), 1):
+                        for i, task in enumerate(result.get("tasks", []), 1):
                             st.write(f"{i}. {task}")
-                        
+
                         # 결과 저장
                         db = load_db()
                         key = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                         db[key] = {
-                            'summary': result['summary'],
-                            'tasks': result['tasks'],
-                            'raw_text': message_text,
-                            'confidence': result.get('confidence', 0.75),
-                            'timestamp': datetime.now().isoformat()
+                            "summary": result["summary"],
+                            "tasks": result["tasks"],
+                            "raw_text": message_text,
+                            "confidence": result.get("confidence", 0.75),
+                            "timestamp": datetime.now().isoformat(),
                         }
                         save_db(db)
-                        
-                        st.success(f"✅ 분석 완료! (신뢰도: {result.get('confidence', 0.75):.2f})")
+
+                        st.success(
+                            f"✅ 분석 완료! (신뢰도: {result.get('confidence', 0.75):.2f})"
+                        )
                 else:
                     st.warning("분석할 메시지를 입력해주세요.")
-        
+
         with col2:
             if st.button("📁 샘플 데이터 로드"):
-                sample_text = '''김민수: 안녕하세요, 오늘 회의 준비는 어떻게 되고 있나요?
+                sample_text = """김민수: 안녕하세요, 오늘 회의 준비는 어떻게 되고 있나요?
 이영희: 프레젠테이션 자료는 80% 정도 완성되었습니다.
 박철수: 마케팅 보고서도 내일까지 완료 예정입니다.
 김민수: 좋습니다. 긴급하게 검토가 필요한 부분이 있나요?
 이영희: 예산 부분을 다시 확인해야 할 것 같습니다.
-박철수: 네, 내일 오전에 최종 검토하겠습니다.'''
-                
+박철수: 네, 내일 오전에 최종 검토하겠습니다."""
+
                 st.text_area("샘플 메시지", value=sample_text, height=150, key="sample")
-    
+
     with tab3:
+        st.header("🔄 멀티 그룹 스크래핑")
+
+        if not MULTI_GROUP_AVAILABLE:
+            st.warning("⚠️  멀티 그룹 스크래퍼 모듈을 사용할 수 없습니다.")
+            st.info("설치: `pip install playwright && playwright install chromium`")
+        else:
+            st.success("✅ 멀티 그룹 스크래퍼 사용 가능")
+
+            # 설정 파일 선택
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                config_path = st.text_input(
+                    "설정 파일 경로",
+                    value="configs/multi_group_config.yaml",
+                    help="멀티 그룹 설정 YAML 파일 경로",
+                )
+
+            with col2:
+                st.write("")
+                st.write("")
+                if st.button("📄 예시 설정 보기"):
+                    example_config = '''groups:
+  - name: "MR.CHA 전용"
+    save_file: "data/mr_cha_messages.json"
+    scrape_interval: 60
+    priority: "HIGH"
+  - name: "HVDC Logistics"
+    save_file: "data/hvdc_logistics_messages.json"
+    scrape_interval: 120
+    priority: "MEDIUM"
+
+scraper_settings:
+  headless: true
+  timeout: 45000
+  max_parallel_groups: 3
+
+ai_settings:
+  enable_ai_summary: true
+  confidence_threshold: 0.85
+  ai_model: "gpt-4o-mini"'''
+                    st.code(example_config, language="yaml")
+
+            # 설정 로드 및 표시
+            if Path(config_path).exists():
+                try:
+                    config = MultiGroupConfig.load_from_yaml(config_path)
+                    config.validate()
+
+                    st.success(
+                        f"✅ 설정 파일 로드 성공: {len(config.whatsapp_groups)}개 그룹"
+                    )
+
+                    # 그룹 정보 표시
+                    st.subheader("📱 스크래핑 대상 그룹")
+
+                    groups_data = []
+                    for group in config.whatsapp_groups:
+                        priority_emoji = {
+                            "HIGH": "🔴",
+                            "MEDIUM": "🟡",
+                            "LOW": "🟢",
+                        }.get(group.priority, "⚪")
+                        groups_data.append(
+                            {
+                                "우선순위": f"{priority_emoji} {group.priority}",
+                                "그룹명": group.name,
+                                "간격(초)": group.scrape_interval,
+                                "저장 파일": group.save_file,
+                            }
+                        )
+
+                    if PANDAS_AVAILABLE:
+                        df = pd.DataFrame(groups_data)
+                        st.dataframe(df, use_container_width=True)
+                    else:
+                        for idx, group_info in enumerate(groups_data, 1):
+                            st.write(
+                                f"{idx}. {group_info['우선순위']} {group_info['그룹명']} ({group_info['간격(초)']}초)"
+                            )
+
+                    # 설정 정보
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    with col1:
+                        st.metric("총 그룹 수", len(config.whatsapp_groups))
+
+                    with col2:
+                        st.metric(
+                            "최대 병렬", config.scraper_settings.max_parallel_groups
+                        )
+
+                    with col3:
+                        ai_status = (
+                            "활성화" if config.ai_integration.enabled else "비활성화"
+                        )
+                        st.metric("AI 통합", ai_status)
+
+                    with col4:
+                        headless_status = (
+                            "예" if config.scraper_settings.headless else "아니오"
+                        )
+                        st.metric("헤드리스", headless_status)
+
+                    # 실행 옵션
+                    st.subheader("⚙️ 실행 옵션")
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        limited_parallel = st.checkbox(
+                            "제한된 병렬 처리",
+                            help="배치 단위로 실행하여 리소스 사용량 감소",
+                        )
+
+                    with col2:
+                        dry_run = st.checkbox(
+                            "Dry-run (설정만 확인)",
+                            help="실제 스크래핑 없이 설정만 확인",
+                        )
+
+                    # 실행 버튼
+                    st.write("")
+                    col1, col2, col3 = st.columns([1, 1, 2])
+
+                    with col1:
+                        if st.button("🚀 스크래핑 시작", type="primary"):
+                            if dry_run:
+                                st.info("✅ Dry-run: 설정 검증 완료")
+                            else:
+                                st.warning("⚠️  실제 스크래핑은 CLI에서 실행해주세요:")
+                                st.code(
+                                    f"python run_multi_group_scraper.py --config {config_path}"
+                                )
+                                st.info(
+                                    "Streamlit 대시보드에서는 비동기 스크래핑을 직접 실행할 수 없습니다."
+                                )
+
+                    with col2:
+                        if st.button("📊 상태 확인"):
+                            st.info("스크래핑 상태는 로그 파일에서 확인할 수 있습니다:")
+                            st.code("tail -f logs/multi_group_scraper.log")
+
+                except ValueError as e:
+                    st.error(f"❌ 설정 검증 실패: {e}")
+                except Exception as e:
+                    st.error(f"❌ 설정 로드 실패: {e}")
+            else:
+                st.warning(f"⚠️  설정 파일을 찾을 수 없습니다: {config_path}")
+                st.info("설정 파일을 생성하거나 올바른 경로를 입력해주세요.")
+
+            # 최근 스크래핑 결과 표시
+            st.subheader("📊 최근 스크래핑 결과")
+
+            # data 디렉토리의 JSON 파일들 확인
+            data_dir = Path("data")
+            if data_dir.exists():
+                json_files = list(data_dir.glob("*_messages.json"))
+
+                if json_files:
+                    st.write(f"발견된 메시지 파일: {len(json_files)}개")
+
+                    for json_file in sorted(
+                        json_files, key=lambda x: x.stat().st_mtime, reverse=True
+                    )[:5]:
+                        try:
+                            with open(json_file, "r", encoding="utf-8") as f:
+                                messages = json.load(f)
+
+                            file_size = json_file.stat().st_size / 1024  # KB
+                            modified_time = datetime.fromtimestamp(
+                                json_file.stat().st_mtime
+                            )
+
+                            with st.expander(
+                                f"📁 {json_file.name} ({len(messages)}개 메시지, {file_size:.1f}KB)"
+                            ):
+                                st.write(
+                                    f"**수정 시간:** {modified_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                                )
+                                st.write(f"**메시지 수:** {len(messages)}")
+
+                                if messages:
+                                    st.write("**최근 메시지 미리보기:**")
+                                    for msg in messages[-3:]:
+                                        st.write(
+                                            f"- [{msg.get('sender', 'Unknown')}] {msg.get('text', '')[:100]}..."
+                                        )
+
+                        except Exception as e:
+                            st.error(f"파일 읽기 오류: {json_file.name} - {e}")
+                else:
+                    st.info("아직 스크래핑된 데이터가 없습니다.")
+            else:
+                st.info("data 디렉토리가 없습니다.")
+
+    with tab4:
         st.header("📋 데이터 관리")
-        
+
         # 저장된 데이터 표시
         db = load_db()
-        
+
         if db:
             st.subheader(f"📁 저장된 분석 결과 ({len(db)}개)")
-            
+
             # 데이터 표시
             for key, data in sorted(db.items(), reverse=True):
-                with st.expander(f"🕐 {key} (신뢰도: {data.get('confidence', 0.0):.2f})"):
-                    st.write("**요약:**", data.get('summary', 'N/A'))
+                with st.expander(
+                    f"🕐 {key} (신뢰도: {data.get('confidence', 0.0):.2f})"
+                ):
+                    st.write("**요약:**", data.get("summary", "N/A"))
                     st.write("**작업:**")
-                    for task in data.get('tasks', []):
+                    for task in data.get("tasks", []):
                         st.write(f"- {task}")
-                    
+
                     if st.button(f"🗑️ 삭제", key=f"delete_{key}"):
                         del db[key]
                         save_db(db)
                         st.rerun()
         else:
             st.info("저장된 데이터가 없습니다.")
-        
+
         # 데이터 관리 버튼
         col1, col2, col3 = st.columns(3)
-        
+
         with col1:
             if st.button("🔄 새로고침"):
                 st.rerun()
-        
+
         with col2:
             if st.button("📤 데이터 내보내기"):
                 if db:
@@ -327,24 +563,25 @@ def main():
                         label="💾 JSON 다운로드",
                         data=json_str,
                         file_name=f"whatsapp_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                        mime="application/json"
+                        mime="application/json",
                     )
                 else:
                     st.warning("내보낼 데이터가 없습니다.")
-        
+
         with col3:
             if st.button("🗑️ 전체 삭제"):
                 if st.checkbox("정말 삭제하시겠습니까?"):
                     save_db({})
                     st.success("모든 데이터가 삭제되었습니다.")
                     st.rerun()
-    
+
     # 푸터
     st.markdown("---")
     st.markdown("**🔧 추천 명령어:**")
     st.code("python extract_whatsapp_auto.py --setup  # WhatsApp 인증")
-    st.code("python extract_whatsapp_auto.py          # 메시지 추출") 
+    st.code("python extract_whatsapp_auto.py          # 메시지 추출")
     st.code("python simplified_whatsapp_app.py        # 간단 모드 실행")
 
+
 if __name__ == "__main__":
-    main() 
+    main()
