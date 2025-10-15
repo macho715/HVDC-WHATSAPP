@@ -6,6 +6,7 @@ MACHO-GPT v3.4-mini for HVDC Project
 """
 
 import asyncio
+import inspect
 import json
 import os
 import re
@@ -14,9 +15,10 @@ import unicodedata
 import warnings
 from datetime import datetime, timezone          # S‑06
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Awaitable
 import logging
 import sys
+import time
 
 # === S‑02: Token‑Bucket Rate Limiter ==================
 class RateLimiter:
@@ -317,7 +319,7 @@ class WhatsAppMediaOCRExtractor:
         # ===============================================
         
         # 공유 세션 디렉토리
-        self.user_data_dir = "browser_data/shared_session"
+        self.user_data_dir = get_unique_user_data_dir(chat_name)
         
         # 미디어 셀렉터들
         self.media_selectors = [
@@ -430,59 +432,108 @@ class WhatsAppMediaOCRExtractor:
         return valid_args
     
     def _cleanup_session_directory(self):
-        """세션 디렉토리 정리"""
+        """세션 디렉토리를 안전하게 삭제합니다. | Safely remove session directory."""
         import shutil
         try:
             shutil.rmtree(self.user_data_dir, ignore_errors=True)
             print(f"🧹 세션 디렉토리 정리 완료: {self.user_data_dir}")
         except Exception as e:
             print(f"⚠️ 세션 디렉토리 정리 실패: {str(e)}")
-    
-    async def _safe_close_context(self, context):
-        """안전한 컨텍스트 종료"""
+
+    def _run_coroutine_blocking(self, coro: Awaitable[Any]) -> Any:
+        """코루틴을 동기적으로 실행합니다. | Run coroutine in synchronous context."""
         try:
-            if context and not context.is_closed():
-                await context.close()
-                print("✅ 브라우저 컨텍스트 안전 종료 완료")
+            return asyncio.run(coro)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(loop)
+                return loop.run_until_complete(coro)
+            finally:
+                asyncio.set_event_loop(None)
+                loop.close()
+
+    async def _async_sleep(self, seconds: float) -> None:
+        """비동기 대기 헬퍼입니다. | Async-friendly sleep helper."""
+        sleep_func = getattr(asyncio, "sleep", None)
+        if sleep_func is None:
+            time.sleep(seconds)
+            return
+        if inspect.iscoroutinefunction(sleep_func):
+            await sleep_func(seconds)
+            return
+        sleep_func(seconds)
+
+    def _safe_close_context(self, context):
+        """브라우저 컨텍스트를 안전하게 종료합니다. | Safely close browser context."""
+        if not context:
+            return
+
+        close_callable = getattr(context, "close", None)
+        if close_callable is None:
+            return
+
+        try:
+            close_result = close_callable()
+            if inspect.isawaitable(close_result):
+                try:
+                    self._run_coroutine_blocking(close_result)
+                except Exception as exc:  # pragma: no cover - fallback logging
+                    print(f"⚠️ 브라우저 컨텍스트 종료 중 오류: {str(exc)}")
+                    return
+            print("✅ 브라우저 컨텍스트 안전 종료 완료")
         except Exception as e:
             print(f"⚠️ 브라우저 컨텍스트 종료 중 오류: {str(e)}")
-    
-    async def _monitor_browser_status(self, page, timeout: int = 30) -> bool:
-        """브라우저 상태 모니터링"""
-        import asyncio
-        start_time = asyncio.get_event_loop().time()
-        
-        while (asyncio.get_event_loop().time() - start_time) < timeout:
-            if page.is_closed():
-                return False
-            await asyncio.sleep(1)
-        
-        return True
-    
+
+    def _monitor_browser_status(self, page, timeout: int = 30) -> bool:
+        """브라우저 상태를 폴링 방식으로 확인합니다. | Poll browser state for health."""
+
+        async def _monitor() -> bool:
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + max(timeout, 0)
+            while loop.time() < deadline:
+                if page.is_closed():
+                    return False
+                await self._async_sleep(1.0)
+            return True
+
+        return bool(self._run_coroutine_blocking(_monitor()))
+
     def _handle_critical_error(self, error: Exception):
         """치명적 오류 처리"""
         print(f"❌ 치명적 오류 발생: {str(error)}")
         self._cleanup_session_directory()
-    
+
     def _log_system_info(self):
-        """시스템 정보 로깅"""
+        """Playwright 및 런타임 정보를 출력합니다. | Log Playwright and runtime info."""
         try:
-            import playwright
-            print(f"🔧 Playwright Version: {playwright.__version__}")
-            print(f"🔧 Python Version: {sys.version}")
-            print(f"🔧 User Data Directory: {self.user_data_dir}")
+            import playwright  # type: ignore[import-not-found]
+
+            version = getattr(playwright, "__version__", "unknown")
+            print(f"🔧 Playwright Version: {version}")
         except Exception as e:
-            print(f"⚠️ 시스템 정보 로깅 실패: {str(e)}")
-    
-    async def _poll_browser_status(self, page, interval: float = 1.0, max_attempts: int = 10) -> bool:
-        """브라우저 상태 폴링"""
-        import asyncio
-        for attempt in range(max_attempts):
-            if page.is_closed():
-                return False
-            if attempt < max_attempts - 1:  # 마지막 시도에서는 대기하지 않음
-                await asyncio.sleep(interval)
-        return True
+            print(f"⚠️ Playwright 정보를 조회할 수 없습니다: {str(e)}")
+
+        print(f"🔧 Python Version: {sys.version}")
+        print(f"🔧 User Data Directory: {self.user_data_dir}")
+
+    def _poll_browser_status(self, page, interval: float = 1.0, max_attempts: int = 10) -> bool:
+        """브라우저 상태를 지정 횟수만큼 확인합니다. | Poll browser status with retry budget."""
+
+        async def _poll() -> bool:
+            attempts = max(int(max_attempts), 0)
+            if attempts == 0:
+                return not page.is_closed()
+
+            for attempt in range(attempts):
+                if page.is_closed():
+                    return False
+                is_last_attempt = attempt == attempts - 1
+                if not is_last_attempt:
+                    await self._async_sleep(max(interval, 0))
+            return True
+
+        return bool(self._run_coroutine_blocking(_poll()))
     
     def _log_debug_info(self, debug_info: Dict[str, Any]):
         """디버그 정보 로깅"""
