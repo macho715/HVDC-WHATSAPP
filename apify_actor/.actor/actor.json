@@ -1,6 +1,6 @@
 {
-  "actorSpecification": 1,
-  "name": "hvdc-whatsapp-poc",
-  "version": "0.0",
-  "buildTag": "latest"
+    "actorSpecification": 1,
+    "name": "hvdc-whatsapp-poc",
+    "version": "0.0",
+    "buildTag": "latest"
 }
