@@ -7,13 +7,19 @@ import asyncio
 import logging
 import signal
 import sys
+from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from integrations.apify_client import actor_call
 
 from .async_scraper import AsyncGroupScraper
-from .group_config import ApifyFallbackSettings, GroupConfig, MultiGroupConfig
+from .group_config import (
+    ApifyFallbackSettings,
+    GroupConfig,
+    MultiGroupConfig,
+    ScraperSettings,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +42,7 @@ class MultiGroupManager:
         max_parallel_groups: int = 5,
         ai_integration: Optional[Dict[str, Any]] = None,
         apify_fallback: Optional[ApifyFallbackSettings] = None,
+        scraper_settings: Optional[ScraperSettings] = None,
     ):
         """
         Args:
@@ -43,10 +50,23 @@ class MultiGroupManager:
             max_parallel_groups: 최대 병렬 처리 그룹 수 / Max parallel groups.
             ai_integration: AI 통합 설정 / AI integration options.
             apify_fallback: Apify 폴백 설정 / Apify fallback settings.
+            scraper_settings: 스크래퍼 설정 / Scraper settings.
         """
         self.group_configs = group_configs
-        self.max_parallel_groups = min(max_parallel_groups, len(group_configs))
-        self.ai_integration = ai_integration or {}
+        self.scraper_settings = (
+            scraper_settings
+            if scraper_settings is not None
+            else ScraperSettings(max_parallel_groups=max_parallel_groups)
+        )
+        self.max_parallel_groups = min(
+            self.scraper_settings.max_parallel_groups, len(group_configs)
+        )
+        if ai_integration is None:
+            self.ai_integration: Dict[str, Any] = {}
+        elif is_dataclass(ai_integration):
+            self.ai_integration = asdict(ai_integration)
+        else:
+            self.ai_integration = dict(ai_integration)
         self.apify_fallback = apify_fallback or ApifyFallbackSettings()
 
         # 스크래퍼 인스턴스들
@@ -79,7 +99,12 @@ class MultiGroupManager:
             AsyncGroupScraper: 스크래퍼 인스턴스
         """
         scraper = AsyncGroupScraper(
-            group_config=group_config, ai_integration=self.ai_integration
+            group_config=group_config,
+            chrome_data_dir=self.scraper_settings.chrome_data_dir,
+            headless=self.scraper_settings.headless,
+            timeout=self.scraper_settings.timeout,
+            ai_integration=self.ai_integration,
+            storage_state_path=self.scraper_settings.auth_state_path,
         )
 
         return scraper

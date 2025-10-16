@@ -42,6 +42,7 @@ class ScraperSettings:
     headless: bool = True
     timeout: int = 30000
     max_parallel_groups: int = 5
+    auth_state_path: Optional[str] = "auth.json"
 
     def __post_init__(self) -> None:
         """설정 유효성 검증 / Validate scraper settings."""
@@ -52,6 +53,9 @@ class ScraperSettings:
             raise ValueError(
                 f"max_parallel_groups는 1~10 사이여야 합니다: {self.max_parallel_groups}"
             )
+
+        if self.auth_state_path is not None and not str(self.auth_state_path).strip():
+            raise ValueError("auth_state_path는 비워둘 수 없습니다")
 
     def dict(self) -> Dict[str, Any]:
         """dataclass 딕셔너리 변환 / Return settings as dictionary."""
@@ -163,6 +167,7 @@ class MultiGroupConfig:
             headless=scraper_data.get("headless", True),
             timeout=scraper_data.get("timeout", 30000),
             max_parallel_groups=scraper_data.get("max_parallel_groups", 5),
+            auth_state_path=scraper_data.get("auth_state_path", "auth.json"),
         )
 
         # AI 통합 설정 파싱

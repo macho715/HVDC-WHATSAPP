@@ -159,8 +159,9 @@ async def main():
         manager = MultiGroupManager(
             group_configs=config.whatsapp_groups,
             max_parallel_groups=config.scraper_settings.max_parallel_groups,
-            ai_integration=config.ai_integration.dict(),
+            ai_integration=config.ai_integration,
             apify_fallback=config.apify_fallback,
+            scraper_settings=config.scraper_settings,
         )
 
         # 실행

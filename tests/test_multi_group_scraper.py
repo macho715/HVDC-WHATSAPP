@@ -46,16 +46,13 @@ class TestGroupConfig:
         config = GroupConfig(
             name="Test Group",
             save_file="test.json",
-            apify_dataset_id="test_dataset_123"
+            apify_dataset_id="test_dataset_123",
         )
         assert config.apify_dataset_id == "test_dataset_123"
 
     def test_should_handle_none_apify_dataset_id(self):
         """apify_dataset_id가 None일 때 처리 테스트"""
-        config = GroupConfig(
-            name="Test Group",
-            save_file="test.json"
-        )
+        config = GroupConfig(name="Test Group", save_file="test.json")
         assert config.apify_dataset_id is None
 
     def test_should_raise_error_for_invalid_scrape_interval(self):
@@ -109,6 +106,12 @@ class TestScraperSettings:
         with pytest.raises(ValueError, match="max_parallel_groups는 1~10 사이"):
             ScraperSettings(max_parallel_groups=15)  # 10 초과
 
+    def test_should_raise_error_for_blank_auth_state_path(self):
+        """빈 인증 상태 경로 오류 테스트/Ensure blank auth_state_path is rejected."""
+
+        with pytest.raises(ValueError, match="auth_state_path는 비워둘 수 없습니다"):
+            ScraperSettings(auth_state_path="   ")
+
 
 class TestAIIntegrationSettings:
     """AIIntegrationSettings 클래스 테스트"""
@@ -141,7 +144,7 @@ class TestApifyFallbackSettings:
             enabled=True,
             actor_id="test_actor",
             token_env="APIFY_TOKEN",
-            timeout_seconds=300
+            timeout_seconds=300,
         )
         assert settings.enabled is True
         assert settings.actor_id == "test_actor"
@@ -150,7 +153,9 @@ class TestApifyFallbackSettings:
 
     def test_should_raise_error_when_enabled_without_actor_id(self):
         """enabled=True인데 actor_id가 없을 때 오류 테스트"""
-        with pytest.raises(ValueError, match="Apify 폴백이 활성화된 경우 actor_id가 필요합니다"):
+        with pytest.raises(
+            ValueError, match="Apify 폴백이 활성화된 경우 actor_id가 필요합니다"
+        ):
             ApifyFallbackSettings(enabled=True, actor_id=None)
 
     def test_should_raise_error_for_empty_token_env(self):
@@ -192,6 +197,7 @@ scraper_settings:
   headless: true
   timeout: 30000
   max_parallel_groups: 3
+  auth_state_path: "tests/state.json"
 
 ai_integration:
   enabled: true
@@ -217,12 +223,15 @@ apify_fallback:
             assert len(config.whatsapp_groups) == 2
             assert config.whatsapp_groups[0].name == "Test Group 1"
             assert config.whatsapp_groups[1].name == "Test Group 2"
+            assert config.whatsapp_groups[0].apify_dataset_id == "test_dataset_1"
+            assert config.whatsapp_groups[1].apify_dataset_id == "test_dataset_2"
             assert config.scraper_settings.timeout == 30000
+            assert config.scraper_settings.auth_state_path == "tests/state.json"
             assert config.ai_integration.enabled is True
             assert config.apify_fallback.enabled is True
             assert config.apify_fallback.actor_id == "user/example-actor"
             assert config.apify_fallback.timeout_seconds == 45
-            
+
             # apify_dataset_id 검증
             assert config.whatsapp_groups[0].apify_dataset_id == "test_dataset_1"
             assert config.whatsapp_groups[1].apify_dataset_id == "test_dataset_2"
@@ -302,7 +311,9 @@ ai_integration:
     def test_should_require_actor_when_apify_fallback_enabled(self):
         """Apify 폴백 actor_id 필수 검증 테스트"""
         # ApifyFallbackSettings 생성 시점에서 검증됨
-        with pytest.raises(ValueError, match="Apify 폴백이 활성화된 경우 actor_id가 필요합니다"):
+        with pytest.raises(
+            ValueError, match="Apify 폴백이 활성화된 경우 actor_id가 필요합니다"
+        ):
             ApifyFallbackSettings(enabled=True, actor_id=None)
 
 
@@ -572,6 +583,35 @@ class TestMultiGroupManager:
         fake_scraper.close.assert_awaited()
 
         assert len(manager.scrapers) == 0
+
+    def test_should_pass_scraper_settings_to_async_scraper(self, mock_group_configs):
+        """스크래퍼 설정이 AsyncGroupScraper에 전파되는지 테스트"""
+        scraper_settings = ScraperSettings(
+            chrome_data_dir="test-chrome",
+            headless=False,
+            timeout=60000,
+            max_parallel_groups=2,
+            auth_state_path="test_auth.json",
+        )
+
+        manager = MultiGroupManager(
+            group_configs=mock_group_configs,
+            max_parallel_groups=2,
+            scraper_settings=scraper_settings,
+        )
+
+        with patch(
+            "macho_gpt.async_scraper.multi_group_manager.AsyncGroupScraper"
+        ) as mock_scraper_class:
+            manager._create_scraper(mock_group_configs[0])
+
+            mock_scraper_class.assert_called_once()
+            call_kwargs = mock_scraper_class.call_args.kwargs
+
+            assert call_kwargs["chrome_data_dir"] == "test-chrome"
+            assert call_kwargs["headless"] is False
+            assert call_kwargs["timeout"] == 60000
+            assert call_kwargs["storage_state_path"] == "test_auth.json"
 
 
 class TestIntegration:
