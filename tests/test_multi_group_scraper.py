@@ -3,21 +3,24 @@ TDD 테스트: 멀티 그룹 WhatsApp 스크래퍼
 Kent Beck TDD 원칙 준수: Red → Green → Refactor
 """
 
-import pytest
 import asyncio
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock
 import tempfile
+from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 import yaml
+
+from macho_gpt.async_scraper.async_scraper import AsyncGroupScraper
 
 # 테스트 대상 모듈 import
 from macho_gpt.async_scraper.group_config import (
-    GroupConfig,
-    ScraperSettings,
     AIIntegrationSettings,
+    ApifyFallbackSettings,
+    GroupConfig,
     MultiGroupConfig,
+    ScraperSettings,
 )
-from macho_gpt.async_scraper.async_scraper import AsyncGroupScraper
 from macho_gpt.async_scraper.multi_group_manager import MultiGroupManager
 
 
@@ -139,6 +142,14 @@ ai_integration:
   enabled: true
   summarize_on_extraction: true
   confidence_threshold: 0.90
+
+apify_fallback:
+  enabled: true
+  apify_actor_id: "user/example-actor"
+  apify_token_env: "APIFY_TOKEN"
+  input_overrides:
+    mode: "test"
+  timeout_seconds: 45
 """
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
@@ -153,6 +164,9 @@ ai_integration:
             assert config.whatsapp_groups[1].name == "Test Group 2"
             assert config.scraper_settings.timeout == 30000
             assert config.ai_integration.enabled is True
+            assert config.apify_fallback.enabled is True
+            assert config.apify_fallback.actor_id == "user/example-actor"
+            assert config.apify_fallback.timeout_seconds == 45
 
         finally:
             Path(temp_path).unlink()
@@ -224,6 +238,17 @@ ai_integration:
         with pytest.raises(
             ValueError, match="그룹 수.*max_parallel_groups.*를 초과합니다"
         ):
+            config.validate()
+
+    def test_should_require_actor_when_apify_fallback_enabled(self):
+        """Apify 폴백 actor_id 필수 검증 테스트"""
+        config = MultiGroupConfig()
+        config.whatsapp_groups = [
+            GroupConfig(name="G1", save_file="g1.json"),
+        ]
+        config.apify_fallback = ApifyFallbackSettings(enabled=True, actor_id=None)
+
+        with pytest.raises(ValueError, match="apify_actor_id"):
             config.validate()
 
 
@@ -457,6 +482,40 @@ class TestMultiGroupManager:
         # 모든 스크래퍼의 close 메서드가 호출되어야 함
         for scraper in mock_scrapers:
             scraper.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_should_use_apify_fallback_on_failure(self, mock_group_configs):
+        """Apify 폴백 실행 테스트"""
+
+        fallback = ApifyFallbackSettings(enabled=True, actor_id="user/actor")
+        manager = MultiGroupManager(
+            group_configs=[mock_group_configs[0]],
+            max_parallel_groups=1,
+            apify_fallback=fallback,
+        )
+
+        fake_scraper = AsyncMock()
+        fake_scraper.run = AsyncMock(side_effect=Exception("Local failure"))
+        fake_scraper.close = AsyncMock()
+
+        manager._create_scraper = Mock(return_value=fake_scraper)
+
+        fallback_response = {
+            "run": {"id": "abc123", "status": "SUCCEEDED"},
+            "items": [{"messages": [{"text": "Remote message"}]}],
+        }
+
+        with patch(
+            "macho_gpt.async_scraper.multi_group_manager.asyncio.to_thread",
+            new=AsyncMock(return_value=fallback_response),
+        ):
+            result = await manager._scrape_group(manager.group_configs[0])
+
+        assert result["success"] is True
+        assert result["fallback_used"] == "apify"
+        assert result["messages_scraped"] == 1
+        assert result["remote_messages"][0]["text"] == "Remote message"
+        fake_scraper.close.assert_awaited()
 
         assert len(manager.scrapers) == 0
 

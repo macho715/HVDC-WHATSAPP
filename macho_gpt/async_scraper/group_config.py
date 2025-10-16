@@ -3,23 +3,24 @@
 YAML 기반 멀티 그룹 설정 로드 및 검증
 """
 
-from dataclasses import dataclass, field
-from typing import List, Optional
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 import yaml
 
 
 @dataclass
 class GroupConfig:
-    """개별 WhatsApp 그룹 설정"""
+    """개별 WhatsApp 그룹 설정 / Individual WhatsApp group configuration."""
 
     name: str
     save_file: str
     scrape_interval: int = 60
     priority: str = "MEDIUM"
 
-    def __post_init__(self):
-        """설정 유효성 검증"""
+    def __post_init__(self) -> None:
+        """설정 유효성 검증 / Validate core group configuration."""
         if self.scrape_interval < 10:
             raise ValueError(
                 f"scrape_interval은 최소 10초 이상이어야 합니다: {self.scrape_interval}"
@@ -34,15 +35,15 @@ class GroupConfig:
 
 @dataclass
 class ScraperSettings:
-    """스크래퍼 전역 설정"""
+    """스크래퍼 전역 설정 / Global scraper runtime settings."""
 
     chrome_data_dir: str = "chrome-data"
     headless: bool = True
     timeout: int = 30000
     max_parallel_groups: int = 5
 
-    def __post_init__(self):
-        """설정 유효성 검증"""
+    def __post_init__(self) -> None:
+        """설정 유효성 검증 / Validate scraper settings."""
         if self.timeout < 5000:
             raise ValueError(f"timeout은 최소 5000ms 이상이어야 합니다: {self.timeout}")
 
@@ -51,30 +52,66 @@ class ScraperSettings:
                 f"max_parallel_groups는 1~10 사이여야 합니다: {self.max_parallel_groups}"
             )
 
+    def dict(self) -> Dict[str, Any]:
+        """dataclass 딕셔너리 변환 / Return settings as dictionary."""
+
+        return asdict(self)
+
 
 @dataclass
 class AIIntegrationSettings:
-    """AI 통합 설정"""
+    """AI 통합 설정 / AI integration feature flags."""
 
     enabled: bool = True
     summarize_on_extraction: bool = True
     confidence_threshold: float = 0.90
 
-    def __post_init__(self):
-        """설정 유효성 검증"""
+    def __post_init__(self) -> None:
+        """설정 유효성 검증 / Validate AI integration settings."""
         if not 0.0 <= self.confidence_threshold <= 1.0:
             raise ValueError(
                 f"confidence_threshold는 0.0~1.0 사이여야 합니다: {self.confidence_threshold}"
             )
 
+    def dict(self) -> Dict[str, Any]:
+        """dataclass 딕셔너리 변환 / Return settings as dictionary."""
+
+        return asdict(self)
+
+
+@dataclass
+class ApifyFallbackSettings:
+    """Apify 폴백 설정 / Apify fallback configuration."""
+
+    enabled: bool = False
+    actor_id: Optional[str] = None
+    token_env: str = "APIFY_TOKEN"
+    input_overrides: Dict[str, Any] = field(default_factory=dict)
+    timeout_seconds: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        """설정 유효성 검증 / Validate fallback configuration."""
+
+        if self.enabled and not self.actor_id:
+            raise ValueError("Apify 폴백이 활성화된 경우 actor_id가 필요합니다")
+
+        if not self.token_env:
+            raise ValueError("apify_token_env는 비어 있을 수 없습니다")
+
+    def dict(self) -> Dict[str, Any]:
+        """dataclass 딕셔너리 변환 / Return fallback settings as dictionary."""
+
+        return asdict(self)
+
 
 @dataclass
 class MultiGroupConfig:
-    """전체 멀티 그룹 설정"""
+    """전체 멀티 그룹 설정 / Multi-group scraper configuration root."""
 
     whatsapp_groups: List[GroupConfig] = field(default_factory=list)
     scraper_settings: ScraperSettings = field(default_factory=ScraperSettings)
     ai_integration: AIIntegrationSettings = field(default_factory=AIIntegrationSettings)
+    apify_fallback: ApifyFallbackSettings = field(default_factory=ApifyFallbackSettings)
 
     @staticmethod
     def load_from_yaml(config_path: str) -> "MultiGroupConfig":
@@ -134,10 +171,21 @@ class MultiGroupConfig:
             confidence_threshold=ai_data.get("confidence_threshold", 0.90),
         )
 
+        # Apify 폴백 설정 파싱
+        apify_data = data.get("apify_fallback", {})
+        apify_fallback = ApifyFallbackSettings(
+            enabled=apify_data.get("enabled", False),
+            actor_id=apify_data.get("apify_actor_id") or apify_data.get("actor_id"),
+            token_env=apify_data.get("apify_token_env", "APIFY_TOKEN"),
+            input_overrides=apify_data.get("input_overrides", {}),
+            timeout_seconds=apify_data.get("timeout_seconds"),
+        )
+
         return MultiGroupConfig(
             whatsapp_groups=groups,
             scraper_settings=scraper_settings,
             ai_integration=ai_integration,
+            apify_fallback=apify_fallback,
         )
 
     def validate(self) -> bool:
@@ -163,5 +211,8 @@ class MultiGroupConfig:
                 f"그룹 수({len(self.whatsapp_groups)})가 "
                 f"max_parallel_groups({self.scraper_settings.max_parallel_groups})를 초과합니다"
             )
+
+        if self.apify_fallback.enabled and not self.apify_fallback.actor_id:
+            raise ValueError("Apify 폴백 사용 시 apify_actor_id가 필요합니다")
 
         return True

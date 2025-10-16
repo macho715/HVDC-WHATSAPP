@@ -4,12 +4,12 @@ MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper CLI
 멀티 그룹 병렬 스크래핑 실행 스크립트
 """
 
-import asyncio
-import sys
 import argparse
+import asyncio
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # 프로젝트 루트를 Python 경로에 추가
 sys.path.insert(0, str(Path(__file__).parent))
@@ -34,11 +34,11 @@ def print_banner():
     """배너 출력"""
     banner = """
 ===============================================================
-
-         MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper
-
-     Samsung C&T Logistics · HVDC Project · ADNOC·DSV Partnership
-
+                                                              
+         MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper    
+                                                              
+     Samsung C&T Logistics · HVDC Project · ADNOC·DSV Partnership    
+                                                              
 ===============================================================
     """
     print(banner)
@@ -51,6 +51,7 @@ def print_config_summary(config: MultiGroupConfig):
     print(f"   최대 병렬 처리: {config.scraper_settings.max_parallel_groups}")
     print(f"   헤드리스 모드: {config.scraper_settings.headless}")
     print(f"   AI 통합: {'활성화' if config.ai_integration.enabled else '비활성화'}")
+    print(f"   Apify 폴백: {'활성화' if config.apify_fallback.enabled else '비활성화'}")
 
     print("\n**Groups to Scrape:**")
     for idx, group in enumerate(config.whatsapp_groups, 1):
@@ -93,6 +94,14 @@ def print_results(results: list):
 
         if error:
             print(f"   [WARNING] 오류: {error}")
+
+        if result.get("fallback_used") == "apify":
+            apify_run = result.get("apify_run", {})
+            print("   [REMOTE] Apify fallback executed")
+            print(
+                f"      · Actor: {apify_run.get('actor_id', 'N/A')} / Run: {apify_run.get('run_id', 'N/A')}"
+            )
+            print(f"      · Remote items: {apify_run.get('dataset_items', 0)}")
 
         if result.get("ai_summary"):
             print(f"   [AI] AI 요약 생성 완료")
@@ -151,6 +160,7 @@ async def main():
             group_configs=config.whatsapp_groups,
             max_parallel_groups=config.scraper_settings.max_parallel_groups,
             ai_integration=config.ai_integration.dict(),
+            apify_fallback=config.apify_fallback,
         )
 
         # 실행
