@@ -18,6 +18,7 @@
         "forwardToWebhook": {
             "title": "POST to WEBHOOK_URL",
             "type": "boolean",
+            "description": "Enable webhook forwarding for received messages",
             "editor": "checkbox",
             "default": true
         }
