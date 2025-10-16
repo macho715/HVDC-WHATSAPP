@@ -4,13 +4,19 @@ Playwright 기반 비동기 스크래핑 및 MACHO-GPT AI 통합
 """
 
 import asyncio
-import logging
-from pathlib import Path
-from typing import List, Dict, Any, Optional
-from datetime import datetime
 import json
+import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from playwright.async_api import async_playwright, Browser, BrowserContext, Page
+from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+
+from macho_gpt.integrations.apify_client import (
+    ApifyDatasetClient,
+    ApifyDatasetClientError,
+)
+
 from .group_config import GroupConfig
 
 logger = logging.getLogger(__name__)
@@ -263,8 +269,51 @@ class AsyncGroupScraper:
                 f"Saved {len(messages)} messages to {self.group_config.save_file}"
             )
 
+            await self._push_messages_to_dataset(messages)
+
         except Exception as e:
             logger.error(f"Failed to save messages: {e}")
+
+    async def _push_messages_to_dataset(self, messages: List[Dict[str, Any]]) -> None:
+        """Apify Dataset에 메시지 전송/Push messages to Apify dataset."""
+        dataset_id = getattr(self.group_config, "apify_dataset_id", None)
+        if not dataset_id:
+            return
+
+        try:
+            client = ApifyDatasetClient()
+        except ValueError as exc:
+            logger.error(f"Apify client 초기화 실패: {exc}")
+            return
+
+        max_attempts = 3
+        delay = 1.0
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                await client.push_items(dataset_id, messages)
+                logger.info(
+                    "Pushed %s messages to Apify dataset %s",
+                    len(messages),
+                    dataset_id,
+                )
+                break
+            except ApifyDatasetClientError as exc:
+                if attempt == max_attempts:
+                    logger.error(
+                        "Apify dataset push failed after %s attempts: %s",
+                        attempt,
+                        exc,
+                    )
+                else:
+                    logger.warning(
+                        "Apify dataset push attempt %s failed: %s. Retrying in %.2f seconds",
+                        attempt,
+                        exc,
+                        delay,
+                    )
+                    await asyncio.sleep(delay)
+                    delay *= 2
 
     async def integrate_with_ai_summarizer(
         self, messages: List[Dict[str, Any]]

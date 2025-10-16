@@ -3,21 +3,23 @@ TDD 테스트: 멀티 그룹 WhatsApp 스크래퍼
 Kent Beck TDD 원칙 준수: Red → Green → Refactor
 """
 
-import pytest
 import asyncio
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock
 import tempfile
+from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 import yaml
+
+from macho_gpt.async_scraper.async_scraper import AsyncGroupScraper
 
 # 테스트 대상 모듈 import
 from macho_gpt.async_scraper.group_config import (
-    GroupConfig,
-    ScraperSettings,
     AIIntegrationSettings,
+    GroupConfig,
     MultiGroupConfig,
+    ScraperSettings,
 )
-from macho_gpt.async_scraper.async_scraper import AsyncGroupScraper
 from macho_gpt.async_scraper.multi_group_manager import MultiGroupManager
 
 
@@ -124,6 +126,7 @@ whatsapp_groups:
     save_file: "test1.json"
     scrape_interval: 60
     priority: "HIGH"
+    apify_dataset_id: "dataset-1"
   - name: "Test Group 2"
     save_file: "test2.json"
     scrape_interval: 120
@@ -151,6 +154,7 @@ ai_integration:
             assert len(config.whatsapp_groups) == 2
             assert config.whatsapp_groups[0].name == "Test Group 1"
             assert config.whatsapp_groups[1].name == "Test Group 2"
+            assert config.whatsapp_groups[0].apify_dataset_id == "dataset-1"
             assert config.scraper_settings.timeout == 30000
             assert config.ai_integration.enabled is True
 

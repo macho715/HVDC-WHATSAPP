@@ -4,8 +4,9 @@ YAML 기반 멀티 그룹 설정 로드 및 검증
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
+
 import yaml
 
 
@@ -17,6 +18,7 @@ class GroupConfig:
     save_file: str
     scrape_interval: int = 60
     priority: str = "MEDIUM"
+    apify_dataset_id: Optional[str] = None
 
     def __post_init__(self):
         """설정 유효성 검증"""
@@ -30,6 +32,12 @@ class GroupConfig:
 
         if not self.name or not self.save_file:
             raise ValueError("name과 save_file은 필수입니다")
+
+        if self.apify_dataset_id is not None:
+            dataset_id = self.apify_dataset_id.strip()
+            if not dataset_id:
+                raise ValueError("apify_dataset_id는 비워둘 수 없습니다")
+            self.apify_dataset_id = dataset_id
 
 
 @dataclass
@@ -111,6 +119,7 @@ class MultiGroupConfig:
                 save_file=group_data["save_file"],
                 scrape_interval=group_data.get("scrape_interval", 60),
                 priority=group_data.get("priority", "MEDIUM"),
+                apify_dataset_id=group_data.get("apify_dataset_id"),
             )
             groups.append(group)
 
