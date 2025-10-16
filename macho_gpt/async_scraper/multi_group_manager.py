@@ -5,13 +5,15 @@
 
 import asyncio
 import logging
-from typing import List, Dict, Any, Optional
-from datetime import datetime
 import signal
 import sys
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .group_config import GroupConfig, MultiGroupConfig
+from integrations.apify_client import actor_call
+
 from .async_scraper import AsyncGroupScraper
+from .group_config import ApifyFallbackSettings, GroupConfig, MultiGroupConfig
 
 logger = logging.getLogger(__name__)
 
@@ -33,23 +35,26 @@ class MultiGroupManager:
         group_configs: List[GroupConfig],
         max_parallel_groups: int = 5,
         ai_integration: Optional[Dict[str, Any]] = None,
+        apify_fallback: Optional[ApifyFallbackSettings] = None,
     ):
         """
         Args:
-            group_configs: 스크래핑할 그룹 설정 리스트
-            max_parallel_groups: 최대 병렬 처리 그룹 수
-            ai_integration: AI 통합 설정
+            group_configs: 스크래핑할 그룹 설정 리스트 / Group configuration list.
+            max_parallel_groups: 최대 병렬 처리 그룹 수 / Max parallel groups.
+            ai_integration: AI 통합 설정 / AI integration options.
+            apify_fallback: Apify 폴백 설정 / Apify fallback settings.
         """
         self.group_configs = group_configs
         self.max_parallel_groups = min(max_parallel_groups, len(group_configs))
         self.ai_integration = ai_integration or {}
+        self.apify_fallback = apify_fallback or ApifyFallbackSettings()
 
         # 스크래퍼 인스턴스들
         self.scrapers: Dict[str, AsyncGroupScraper] = {}
 
         # 상태 관리
         self.is_running = False
-        self.tasks: List[asyncio.Task] = []
+        self.tasks: List[asyncio.Task[Any]] = []
 
         # 통계
         self.stats = {
@@ -122,9 +127,15 @@ class MultiGroupManager:
             result["error"] = "cancelled"
 
         except Exception as e:
-            logger.error(f"Error scraping group {group_config.name}: {e}")
+            logger.error(
+                "Error scraping group %s: %s", group_config.name, e, exc_info=True
+            )
             result["error"] = str(e)
             self.stats["errors"] += 1
+
+            fallback_result = await self._handle_apify_fallback(group_config, e)
+            if fallback_result:
+                result.update(fallback_result)
 
         finally:
             # 클린업
@@ -138,6 +149,100 @@ class MultiGroupManager:
             result["end_time"] = datetime.now().isoformat()
 
         return result
+
+    async def _handle_apify_fallback(
+        self, group_config: GroupConfig, original_error: Exception
+    ) -> Dict[str, Any]:
+        """Apify 폴백 처리 / Handle Apify fallback invocation."""
+
+        if not self.apify_fallback.enabled:
+            return {}
+
+        if not self.apify_fallback.actor_id:
+            logger.warning(
+                "Apify fallback requested for %s but actor_id is missing",
+                group_config.name,
+            )
+            return {}
+
+        logger.info(
+            "Attempting Apify fallback for group %s via actor %s",
+            group_config.name,
+            self.apify_fallback.actor_id,
+        )
+
+        payload = self._build_apify_payload(group_config, original_error)
+
+        try:
+            fallback_output = await asyncio.to_thread(
+                actor_call,
+                self.apify_fallback.actor_id,
+                payload,
+                token_env=self.apify_fallback.token_env,
+                timeout_seconds=self.apify_fallback.timeout_seconds,
+            )
+        except Exception as fallback_error:  # pragma: no cover - network interaction
+            logger.error(
+                "Apify fallback failed for group %s: %s",
+                group_config.name,
+                fallback_error,
+                exc_info=True,
+            )
+            return {}
+
+        remote_messages = self._extract_remote_messages(
+            fallback_output.get("items", [])
+        )
+
+        logger.info(
+            "Apify fallback succeeded for group %s with %d messages",
+            group_config.name,
+            len(remote_messages),
+        )
+
+        return {
+            "success": True,
+            "fallback_used": "apify",
+            "remote_messages": remote_messages,
+            "messages_scraped": len(remote_messages),
+            "apify_run": {
+                "actor_id": self.apify_fallback.actor_id,
+                "run_id": fallback_output.get("run", {}).get("id"),
+                "status": fallback_output.get("run", {}).get("status"),
+                "dataset_items": len(fallback_output.get("items", [])),
+            },
+            "original_error": str(original_error),
+        }
+
+    def _build_apify_payload(
+        self, group_config: GroupConfig, original_error: Exception
+    ) -> Dict[str, Any]:
+        """Apify 입력 구성 / Build Apify input payload."""
+
+        payload = {
+            "group_name": group_config.name,
+            "save_file": group_config.save_file,
+            "requested_at": datetime.utcnow().isoformat() + "Z",
+            "error_message": str(original_error),
+        }
+        payload.update(self.apify_fallback.input_overrides)
+        return payload
+
+    @staticmethod
+    def _extract_remote_messages(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Apify 데이터셋 메시지 추출 / Normalize remote dataset messages."""
+
+        messages: List[Dict[str, Any]] = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if "messages" in item and isinstance(item["messages"], list):
+                messages.extend(
+                    msg for msg in item["messages"] if isinstance(msg, dict)
+                )
+            else:
+                messages.append(item)
+        return messages
 
     async def start_all_scrapers(self) -> None:
         """모든 스크래퍼 시작"""
@@ -228,7 +333,8 @@ class MultiGroupManager:
         try:
             # 그룹을 배치로 나누어 처리
             for i in range(0, len(self.group_configs), self.max_parallel_groups):
-                batch = self.group_configs[i : i + self.max_parallel_groups]
+                batch_end = i + self.max_parallel_groups
+                batch = self.group_configs[i:batch_end]
 
                 logger.info(
                     f"Processing batch {i//self.max_parallel_groups + 1}: {[g.name for g in batch]}"
@@ -341,6 +447,7 @@ async def main():
     """CLI 실행 예제"""
     import argparse
     import json
+
     from .group_config import MultiGroupConfig
 
     parser = argparse.ArgumentParser(description="Multi-Group WhatsApp Scraper")
