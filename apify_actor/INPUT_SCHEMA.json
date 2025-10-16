@@ -6,19 +6,20 @@
     "allowedGroupIds": {
       "title": "Allowed Group JIDs (comma-separated)",
       "type": "string",
-      "description": "수집 허용 그룹 JID 목록. 예: 1203631xxxxxx@g.us,1203632yyyyyy@g.us"
+      "description": "예: 1203xxx@g.us,1203yyy@g.us",
+      "editor": "textfield"
     },
     "keywordFilter": {
-      "title": "Keyword filter (optional, regex)",
+      "title": "Keyword filter (regex, optional)",
       "type": "string",
-      "description": "본문에 매칭되면 수집(비우면 전체). 예: (ETA|gate pass|invoice)"
+      "description": "(ETA|gate pass|invoice)",
+      "editor": "textfield"
     },
     "forwardToWebhook": {
       "title": "POST to WEBHOOK_URL",
       "type": "boolean",
+      "editor": "checkbox",
       "default": true
     }
-  },
-  "required": []
+  }
 }
-
