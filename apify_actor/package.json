@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p .",
+    "build": "npx tsc -p .",
     "start": "node dist/index.js"
   },
   "dependencies": {
     "@apify/timeout": "^0.3.0",
     "apify": "^3.1.8",
-    "@whiskeysockets/baileys": "^7.0.0",
+    "@whiskeysockets/baileys": "^6.7.20",
     "pino": "^9.0.0",
     "undici": "^6.19.8"
   },

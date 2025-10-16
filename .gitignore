@@ -128,6 +128,13 @@ react_frontend/npm-debug.log*
 react_frontend/yarn-debug.log*
 react_frontend/yarn-error.log*
 
+# Node.js (Apify Actor)
+apify_actor/node_modules/
+apify_actor/dist/
+apify_actor/npm-debug.log*
+apify_actor/yarn-debug.log*
+apify_actor/yarn-error.log*
+
 # Build outputs
 react_frontend/build/
 react_frontend/dist/

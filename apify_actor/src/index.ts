@@ -39,7 +39,7 @@ await startWhatsapp({
       groupId,
       messageId: m.key?.id,
       from: m.key?.participant || m.key?.remoteJid,
-      ts: m.messageTimestamp?.toNumber?.() ?? Date.now()/1000,
+      ts: typeof m.messageTimestamp === 'number' ? m.messageTimestamp : m.messageTimestamp?.toNumber?.() ?? Date.now()/1000,
       text,
       hasMedia: Boolean(msg?.imageMessage || msg?.documentMessage || msg?.videoMessage)
     };
