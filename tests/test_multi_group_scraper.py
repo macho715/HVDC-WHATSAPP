@@ -301,14 +301,9 @@ ai_integration:
 
     def test_should_require_actor_when_apify_fallback_enabled(self):
         """Apify 폴백 actor_id 필수 검증 테스트"""
-        config = MultiGroupConfig()
-        config.whatsapp_groups = [
-            GroupConfig(name="G1", save_file="g1.json"),
-        ]
-        config.apify_fallback = ApifyFallbackSettings(enabled=True, actor_id=None)
-
-        with pytest.raises(ValueError, match="apify_actor_id"):
-            config.validate()
+        # ApifyFallbackSettings 생성 시점에서 검증됨
+        with pytest.raises(ValueError, match="Apify 폴백이 활성화된 경우 actor_id가 필요합니다"):
+            ApifyFallbackSettings(enabled=True, actor_id=None)
 
 
 class TestAsyncGroupScraper:
