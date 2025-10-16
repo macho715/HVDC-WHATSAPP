@@ -42,10 +42,10 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["macho_gpt", "macho_gpt.core", "macho_gpt.rpa"]
+packages = ["macho_gpt", "macho_gpt.core", "macho_gpt.rpa", "integrations"]
 py-modules = [
     "whatsapp_executive_dashboard",
-    "simplified_whatsapp_app", 
+    "simplified_whatsapp_app",
     "run_app",
     "extract_whatsapp_auto"
 ]
@@ -55,4 +55,4 @@ py-modules = [
 
 [tool.pyright.python]
 venvPath = "."
-venv = "venv" 
+venv = "venv"
