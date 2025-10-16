@@ -1,12 +1,12 @@
 {
-  "actorSpecification": 1,
-  "name": "hvdc-whatsapp-poc",
-  "title": "HVDC WhatsApp – Baileys Runner (PoC)",
-  "description": "Internal PoC: capture messages from allowed WhatsApp groups via Baileys, push to Apify Dataset + webhook.",
-  "version": "0.0",
-  "buildTag": "latest",
-  "nodeJs": "20",
-  "memoryMbytes": 1024,
-  "timeoutSecs": 21600
+    "actorSpecification": 1,
+    "name": "hvdc-whatsapp-poc",
+    "title": "HVDC WhatsApp – Baileys Runner (PoC)",
+    "description": "Internal PoC: capture messages from allowed WhatsApp groups via Baileys, push to Apify Dataset + webhook.",
+    "version": "0.0",
+    "buildTag": "latest",
+    "dockerfile": "FROM apify/actor-node:20\\nUSER root\\nCOPY package*.json ./\\nRUN npm ci\\nCOPY . ./\\nRUN npm run build\\nCMD [\\"node\\",\\"dist/index.js\\"]\\n",
+    "nodeJs": "20",
+    "memoryMbytes": 1024,
+    "timeoutSecs": 21600
 }
-
