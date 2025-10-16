@@ -13,3 +13,7 @@
 - Updated extractor CLI to accept --run and --room aliases used in operational runbooks.
 - Increased WhatsApp login tolerance and added retry handling when storage-backed
   sessions are unavailable during async scraping.
+
+### Fixed
+- Ensure the multi-group scraper CLI creates the logs directory before configuring logging
+  handlers to avoid runtime crashes during tests and deployments.

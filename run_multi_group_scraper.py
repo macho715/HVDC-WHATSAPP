@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-"""
-MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper CLI
-멀티 그룹 병렬 스크래핑 실행 스크립트
-"""
+"""MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper CLI
+멀티 그룹 스크래핑 실행 스크립트/Multigroup scraping runner script."""
 
 import argparse
 import asyncio
@@ -11,27 +9,50 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# 프로젝트 루트를 Python 경로에 추가
+# 프로젝트 루트를 Python 경로에 추가/Add project root to import path.
 sys.path.insert(0, str(Path(__file__).parent))
 
 from macho_gpt.async_scraper.group_config import MultiGroupConfig
 from macho_gpt.async_scraper.multi_group_manager import MultiGroupManager
 
-# 로깅 설정
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("logs/multi_group_scraper.log", encoding="utf-8"),
-        logging.StreamHandler(),
-    ],
-)
+DEFAULT_LOG_PATH = Path("logs") / "multi_group_scraper.log"
 
 logger = logging.getLogger(__name__)
 
 
-def print_banner():
-    """배너 출력"""
+def setup_logging(log_file: Path = DEFAULT_LOG_PATH) -> logging.Logger:
+    """로그 설정 초기화/Initialize logging configuration."""
+
+    log_path = Path(log_file)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+        handler.close()
+
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(stream_handler)
+
+    module_logger = logging.getLogger(__name__)
+    module_logger.setLevel(logging.INFO)
+    return module_logger
+
+
+def print_banner() -> None:
+    """배너 출력/Print CLI banner."""
     banner = """
 ===============================================================
                                                               
@@ -44,8 +65,8 @@ def print_banner():
     print(banner)
 
 
-def print_config_summary(config: MultiGroupConfig):
-    """설정 요약 출력"""
+def print_config_summary(config: MultiGroupConfig) -> None:
+    """설정 요약 출력/Print configuration summary."""
     print("\n**Multi-Group Configuration Summary**")
     print(f"   총 그룹 수: {len(config.whatsapp_groups)}")
     print(f"   최대 병렬 처리: {config.scraper_settings.max_parallel_groups}")
@@ -62,8 +83,8 @@ def print_config_summary(config: MultiGroupConfig):
         )
 
 
-def print_results(results: list):
-    """실행 결과 출력"""
+def print_results(results: list) -> None:
+    """실행 결과 출력/Print execution results."""
     print("\n" + "=" * 80)
     print("**Scraping Results Summary**")
     print("=" * 80)
@@ -98,8 +119,8 @@ def print_results(results: list):
             print(f"   [AI] AI 요약 생성 완료")
 
 
-async def main():
-    """메인 실행 함수"""
+async def main() -> int:
+    """메인 실행 함수/Run CLI entrypoint."""
     parser = argparse.ArgumentParser(
         description="MACHO-GPT Multi-Group WhatsApp Scraper"
     )
@@ -122,13 +143,13 @@ async def main():
 
     args = parser.parse_args()
 
+    # 로깅 초기화
+    setup_logging()
+
     # 배너 출력
     print_banner()
 
     try:
-        # 로그 디렉토리 생성
-        Path("logs").mkdir(exist_ok=True)
-
         # 설정 로드
         logger.info(f"Loading configuration from: {args.config}")
         config = MultiGroupConfig.load_from_yaml(args.config)

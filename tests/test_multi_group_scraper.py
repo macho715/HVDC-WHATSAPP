@@ -4,6 +4,9 @@ Kent Beck TDD 원칙 준수: Red → Green → Refactor
 """
 
 import asyncio
+import importlib
+import logging
+import shutil
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
@@ -522,6 +525,43 @@ class TestIntegration:
         """그룹별 별도 파일 저장 테스트"""
         # 이 테스트는 파일 저장 로직이 구현된 후 작성
         pass
+
+
+class TestRunMultiGroupScraper:
+    """run_multi_group_scraper 유틸리티 테스트/Tests for runner utilities."""
+
+    def test_should_configure_logging_with_directory_creation(self, tmp_path):
+        """로그 설정 시 디렉토리 생성 확인/Ensure logging setup creates log directory."""
+
+        Path("logs").mkdir(exist_ok=True)
+
+        runner = importlib.import_module("run_multi_group_scraper")
+        runner = importlib.reload(runner)
+
+        custom_log = tmp_path / "custom_logs" / "scraper.log"
+        if custom_log.parent.exists():
+            shutil.rmtree(custom_log.parent)
+
+        root_logger = logging.getLogger()
+        original_handlers = list(root_logger.handlers)
+
+        configured_logger = runner.setup_logging(custom_log)
+
+        file_handlers = [
+            handler
+            for handler in root_logger.handlers
+            if isinstance(handler, logging.FileHandler)
+        ]
+
+        assert custom_log.exists()
+        assert any(
+            Path(handler.baseFilename) == custom_log for handler in file_handlers
+        )
+        assert configured_logger is logging.getLogger(runner.__name__)
+
+        for handler in [h for h in root_logger.handlers if h not in original_handlers]:
+            handler.close()
+            root_logger.removeHandler(handler)
 
 
 if __name__ == "__main__":
