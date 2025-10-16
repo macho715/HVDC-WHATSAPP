@@ -156,4 +156,6 @@ config.env
 
 # Cache directories
 .cache/
-cache/
+cache/auth.json
+apify*.md
+configs/test_*.yaml
