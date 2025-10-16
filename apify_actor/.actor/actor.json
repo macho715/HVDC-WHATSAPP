@@ -2,6 +2,5 @@
   "actorSpecification": 1,
   "name": "hvdc-whatsapp-poc",
   "version": "0.0",
-  "buildTag": "latest",
-  "dockerfile": "FROM apify/actor-node:20\nUSER root\nCOPY package*.json ./\nRUN npm ci\nCOPY . ./\nRUN npm run build\nCMD [\"node\",\"dist/index.js\"]\n"
+  "buildTag": "latest"
 }
