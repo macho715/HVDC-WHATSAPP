@@ -1,0 +1,24 @@
+{
+  "title": "HVDC WhatsApp – PoC Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "allowedGroupIds": {
+      "title": "Allowed Group JIDs (comma-separated)",
+      "type": "string",
+      "description": "수집 허용 그룹 JID 목록. 예: 1203631xxxxxx@g.us,1203632yyyyyy@g.us"
+    },
+    "keywordFilter": {
+      "title": "Keyword filter (optional, regex)",
+      "type": "string",
+      "description": "본문에 매칭되면 수집(비우면 전체). 예: (ETA|gate pass|invoice)"
+    },
+    "forwardToWebhook": {
+      "title": "POST to WEBHOOK_URL",
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": []
+}
+

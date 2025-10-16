@@ -127,6 +127,14 @@ HVDC-WHATSAPP/
 - ⚡ **비동기 처리** asyncio 기반 고성능 실행
 - 📋 **YAML 설정** 간편한 그룹 관리 (우선순위, 간격 설정)
 - 🎯 **우선순위 시스템** HIGH/MEDIUM/LOW 자동 스케줄링
+
+### 🌐 **NEW: Baileys Apify Actor (v3.4-mini)**
+- 🔧 **Baileys 기반** WhatsApp Web API 직접 연동
+- 🚫 **post_logout 회피** Playwright 대안 솔루션
+- ☁️ **Apify 클라우드** 무제한 확장성 및 안정성
+- 🔄 **자동 재연결** 연결 끊김 시 자동 복구
+- 📊 **Dataset 통합** Apify Dataset 자동 저장
+- 🔔 **Webhook 지원** 실시간 알림 및 통합
 - 🧪 **TDD 검증** 25+ 테스트로 안정성 보장
 - 📊 **Streamlit 통합** 웹 기반 모니터링 UI
 - 🔗 **하위 호환성** 기존 단일 그룹 기능 유지
