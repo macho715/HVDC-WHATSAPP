@@ -5,13 +5,6 @@
   "description": "Internal PoC: capture messages from allowed WhatsApp groups via Baileys, push to Apify Dataset + webhook.",
   "version": "0.0",
   "buildTag": "latest",
-  "dockerfile": "FROM apify/actor-node:20\nUSER root\nRUN npm i -g pnpm\nCOPY . ./\nRUN pnpm i --frozen-lockfile || npm ci\nCMD [\"node\", \"dist/index.js\"]\n",
-  "environmentVariables": {
-    "LOG_LEVEL": "INFO",
-    "WEBHOOK_URL": "@pocWebhookUrl",
-    "SESSION_KV_KEY": "baileys_session",
-    "PAIR_MODE": "qr"
-  },
   "nodeJs": "20",
   "memoryMbytes": 1024,
   "timeoutSecs": 21600
