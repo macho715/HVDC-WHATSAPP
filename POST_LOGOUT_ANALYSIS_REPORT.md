@@ -23,7 +23,7 @@ python run_multi_group_scraper.py --config configs/test_multi_group_config.yaml
 
 **핵심 오류 메시지**:
 ```
-WARNING: WhatsApp login timeout for MR.CHA 전용: 
+WARNING: WhatsApp login timeout for MR.CHA 전용:
 Page.wait_for_selector: Timeout 120000ms exceeded.
 Call log:
   - waiting for locator("[data-testid=\"chat-list\"]") to be visible
@@ -73,16 +73,16 @@ Call log:
 ```
 1. AsyncGroupScraper가 auth.json 로드 ✅
    └── Playwright storage_state 형식으로 정상 로드
-   
+
 2. Playwright가 storage_state를 브라우저에 적용 ✅
    └── 쿠키와 localStorage 정상 설정
-   
+
 3. WhatsApp Web 접속 ✅
    └── https://web.whatsapp.com 정상 접속
-   
+
 4. 서버가 세션 검증 ❌
    └── post_logout=1로 리다이렉트
-   
+
 5. chat-list 셀렉터 대기 ❌
    └── post_logout 페이지에는 chat-list가 없음
 ```
@@ -93,7 +93,7 @@ Call log:
 
 #### 1. **자동화 도구 탐지** (확률: 85%)
 - **증거**: Playwright의 자동화 특성 감지
-- **메커니즘**: 
+- **메커니즘**:
   - `navigator.webdriver` 속성 감지
   - 마우스/키보드 이벤트 패턴 분석
   - 브라우저 핑거프린트 불일치
@@ -125,11 +125,11 @@ async def initialize(self) -> None:
         storage_state = self._load_storage_state()
         if storage_state:
             context_kwargs["storage_state"] = storage_state
-            
+
         # 브라우저 컨텍스트 생성
         self.context = await self.browser.new_context(**context_kwargs)
         self.page = await self.context.new_page()
-        
+
         # WhatsApp Web 접속
         await self.page.goto("https://web.whatsapp.com", wait_until="networkidle")
 ```
@@ -166,7 +166,7 @@ async def run(self) -> List[Dict[str, Any]]:
         try:
             await self.initialize()
             login_success = await self.wait_for_whatsapp_login()
-            
+
             if not login_success:
                 logger.warning(f"Login failed, attempt {attempt + 1}/{max_retries}")
                 if attempt < max_retries - 1:
@@ -203,7 +203,7 @@ async def wait_for_whatsapp_login(self, timeout: int = 120) -> bool:
         def check_post_logout():
             current_url = self.page.url
             return "post_logout" in current_url
-        
+
         # chat-list 대기와 동시에 post_logout 감지
         try:
             await self.page.wait_for_selector(
@@ -216,7 +216,7 @@ async def wait_for_whatsapp_login(self, timeout: int = 120) -> bool:
                 logger.error("Session expired: post_logout detected")
                 return False
             raise
-            
+
     except Exception as e:
         logger.warning(f"WhatsApp login timeout for {self.group_config.name}: {e}")
         return False
@@ -232,20 +232,20 @@ async def handle_session_expiry(self) -> bool:
         # QR 코드 표시
         qr_selector = '[data-testid="qr-code"]'
         await self.page.wait_for_selector(qr_selector, timeout=30000)
-        
+
         logger.info("QR code displayed, waiting for manual scan...")
-        
+
         # 사용자 스캔 대기 (최대 5분)
         await self.page.wait_for_selector(
             '[data-testid="chat-list"]', timeout=300000
         )
-        
+
         # 새 storage state 저장
         await self.context.storage_state(path=self.storage_state_path)
-        
+
         logger.info("Re-authentication successful")
         return True
-        
+
     except Exception as e:
         logger.error(f"Re-authentication failed: {e}")
         return False
@@ -262,13 +262,13 @@ async def initialize_stealth_mode(self) -> None:
     Object.defineProperty(navigator, 'webdriver', {
         get: () => undefined,
     });
-    
+
     // 자동화 관련 속성 제거
     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
     """
-    
+
     await self.page.add_init_script(stealth_js)
 ```
 
@@ -340,7 +340,7 @@ async def initialize_stealth_mode(self) -> None:
 ```python
 class SessionMonitor:
     """세션 상태 실시간 모니터링"""
-    
+
     async def check_session_health(self) -> bool:
         """세션 상태 확인"""
         current_url = self.page.url
@@ -354,7 +354,7 @@ class SessionMonitor:
 ```python
 class AutoRecovery:
     """자동 복구 시스템"""
-    
+
     async def auto_recover_session(self) -> bool:
         """세션 자동 복구"""
         # 1. 세션 상태 확인
@@ -367,7 +367,7 @@ class AutoRecovery:
 ```python
 class AlertSystem:
     """세션 문제 알림 시스템"""
-    
+
     async def notify_session_issue(self, issue_type: str):
         """세션 문제 알림"""
         # Slack, Email, SMS 등으로 알림
@@ -399,7 +399,7 @@ class AlertSystem:
 
 ---
 
-**보고서 작성일**: 2025-01-16  
-**작성자**: MACHO-GPT v3.4-mini  
-**분석 대상**: HVDC-WHATSAPP 멀티 그룹 스크래퍼  
+**보고서 작성일**: 2025-01-16
+**작성자**: MACHO-GPT v3.4-mini
+**분석 대상**: HVDC-WHATSAPP 멀티 그룹 스크래퍼
 **상태**: CRITICAL - 즉시 조치 필요

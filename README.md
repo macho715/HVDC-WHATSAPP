@@ -295,11 +295,11 @@ streamlit run simplified_whatsapp_app.py
 
 ### 🌐 **원격 폴백 (Apify) 활성화**
 
-1. `.env` 파일에 Apify 토큰을 등록합니다.  
+1. `.env` 파일에 Apify 토큰을 등록합니다.
    `APIFY_TOKEN=your_secret_token`
-2. `configs/multi_group_config.yaml`에 `apify_fallback` 블록을 활성화하고 `apify_actor_id`를 채웁니다.  
+2. `configs/multi_group_config.yaml`에 `apify_fallback` 블록을 활성화하고 `apify_actor_id`를 채웁니다.
    `apify_token_env` 값은 `.env` 키와 일치해야 하며 `input_overrides`로 추가 파라미터를 전달할 수 있습니다.
-3. 로컬 스크래핑이 실패하면 동일한 그룹을 Apify 액터로 재시도하고 데이터셋 결과를 기존 JSON과 병합합니다.  
+3. 로컬 스크래핑이 실패하면 동일한 그룹을 Apify 액터로 재시도하고 데이터셋 결과를 기존 JSON과 병합합니다.
    실행 과정은 `logs/multi_group_scraper.log`에 기록되므로 원격 재시도 성공/실패를 확인할 수 있습니다.
 4. CLI 결과에도 `Apify fallback executed` 블록이 출력되어 원격 런 ID와 수집 건수를 바로 확인할 수 있습니다.
 

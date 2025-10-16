@@ -1,8 +1,8 @@
 # PR #5 패치 적용 작업 보고서
 
-**작업 일시**: 2025-01-16  
-**대상 브랜치**: main  
-**작업 디렉토리**: `C:\Users\minky\Downloads\HVDC-WHATSAPP-github`  
+**작업 일시**: 2025-01-16
+**대상 브랜치**: main
+**작업 디렉토리**: `C:\Users\minky\Downloads\HVDC-WHATSAPP-github`
 **PR 참조**: [PR #5 - Add apify_dataset_id to GroupConfig and ScraperSettings](https://github.com/macho715/HVDC-WHATSAPP/pull/5)
 
 ---
@@ -86,13 +86,13 @@ async def initialize(self) -> None:
 1. **ApifyDatasetClient 클래스 (완전 재구현)**
    ```python
    # 파일: macho_gpt/integrations/apify_client.py
-   
+
    @dataclass
    class ApifyDatasetClient:
        token: str | None = None
        base_url: str = "https://api.apify.com/v2"
        timeout: int = 30
-       
+
        async def push_items(self, dataset_id: str, items: Sequence[Mapping[str, Any]]) -> None:
            """Dataset에 아이템 푸시 (urllib 기반 HTTP POST)"""
    ```
@@ -111,7 +111,7 @@ async def initialize(self) -> None:
        # 1. 로컬 파일 저장 (기존 로직)
        with open(save_path, "w", encoding="utf-8") as f:
            json.dump(existing_messages, f, ensure_ascii=False, indent=2)
-       
+
        # 2. Apify dataset 푸시 (신규)
        await self._push_messages_to_dataset(messages)
    ```
@@ -390,6 +390,6 @@ PR #5 패치 적용 작업이 성공적으로 완료되었습니다. Storage Sta
 
 ---
 
-**작성자**: MACHO-GPT v3.4-mini  
-**작성일**: 2025-01-16  
+**작성자**: MACHO-GPT v3.4-mini
+**작성일**: 2025-01-16
 **문서 버전**: 1.0

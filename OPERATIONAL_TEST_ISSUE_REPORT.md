@@ -16,8 +16,8 @@
 ## Issues Identified
 
 ### Issue 1: WhatsApp Web Login Timeout
-**Severity**: CRITICAL  
-**Status**: OPEN  
+**Severity**: CRITICAL
+**Status**: OPEN
 **Impact**: 스크래핑 완전 실패
 
 **Description**:
@@ -25,7 +25,7 @@
 
 **Error Messages**:
 ```
-WARNING:macho_gpt.async_scraper.async_scraper:WhatsApp login timeout for MR.CHA 전용: 
+WARNING:macho_gpt.async_scraper.async_scraper:WhatsApp login timeout for MR.CHA 전용:
 Page.wait_for_selector: Timeout 60000ms exceeded.
 Call log:
   - waiting for locator("[data-testid=\"chat-list\"]") to be visible
@@ -35,7 +35,7 @@ Call log:
 1. **auth.json 형식 불일치**
    - 수동 인증: Playwright storage_state 형식
    - 스크래퍼 예상: 기존 cookies + origins 형식
-   
+
 2. **인증 정보 로드 메커니즘 불일치**
    - AsyncGroupScraper가 storage_state를 제대로 파싱하지 못함
    - Browser context 생성 시 인증 정보 미적용
@@ -65,8 +65,8 @@ Call log:
 4. Fallback 메커니즘: 로그인 실패 시 재시도 로직 추가
 
 ### Issue 2: Authentication Format Incompatibility
-**Severity**: HIGH  
-**Status**: OPEN  
+**Severity**: HIGH
+**Status**: OPEN
 **Impact**: 인증 정보 재사용 불가
 
 **Description**:
@@ -83,8 +83,8 @@ Call log:
 3. auth_setup.py와 수동 인증 스크립트 동기화
 
 ### Issue 3: Missing Logging Infrastructure
-**Severity**: MEDIUM  
-**Status**: OPEN  
+**Severity**: MEDIUM
+**Status**: OPEN
 **Impact**: 디버깅 및 모니터링 어려움
 
 **Description**:
@@ -138,15 +138,15 @@ logs/multi_group_scraper.log 파일이 생성되지 않음
 
 ## Lessons Learned
 
-1. **인증 형식 표준화 필요**: 
+1. **인증 형식 표준화 필요**:
    - 여러 인증 방법이 다른 형식을 사용하여 혼란 야기
-   
+
 2. **로그 인프라 사전 검증**:
    - 테스트 실행 전 로그 디렉토리 및 핸들러 확인 필요
-   
+
 3. **타임아웃 설정 재검토**:
    - 60초는 네트워크 지연 시 부족할 수 있음
-   
+
 4. **단계별 통합 테스트**:
    - 인증 → 로그인 → 그룹 검색 → 메시지 스크래핑을 개별 테스트
 
@@ -200,6 +200,6 @@ ERROR:macho_gpt.async_scraper.async_scraper:Failed to login to WhatsApp for ADNO
 ```
 
 ---
-**보고서 작성일**: 2025-10-16  
-**작성자**: MACHO-GPT v3.4-mini  
+**보고서 작성일**: 2025-10-16
+**작성자**: MACHO-GPT v3.4-mini
 **프로젝트**: HVDC-WHATSAPP Multi-Group Scraping System
