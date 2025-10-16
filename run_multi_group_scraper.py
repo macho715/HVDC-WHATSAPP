@@ -34,11 +34,11 @@ def print_banner():
     """배너 출력"""
     banner = """
 ===============================================================
-                                                              
-         MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper    
-                                                              
-     Samsung C&T Logistics · HVDC Project · ADNOC·DSV Partnership    
-                                                              
+
+         MACHO-GPT v3.4-mini Multi-Group WhatsApp Scraper
+
+     Samsung C&T Logistics · HVDC Project · ADNOC·DSV Partnership
+
 ===============================================================
     """
     print(banner)
@@ -51,7 +51,7 @@ def print_config_summary(config: MultiGroupConfig):
     print(f"   최대 병렬 처리: {config.scraper_settings.max_parallel_groups}")
     print(f"   헤드리스 모드: {config.scraper_settings.headless}")
     print(f"   AI 통합: {'활성화' if config.ai_integration.enabled else '비활성화'}")
-    
+
     print("\n**Groups to Scrape:**")
     for idx, group in enumerate(config.whatsapp_groups, 1):
         priority_icon = {"HIGH": "[HIGH]", "MEDIUM": "[MED]", "LOW": "[LOW]"}.get(
@@ -67,12 +67,12 @@ def print_results(results: list):
     print("\n" + "=" * 80)
     print("**Scraping Results Summary**")
     print("=" * 80)
-    
+
     total_groups = len(results)
     successful = sum(1 for r in results if r.get("success"))
     failed = total_groups - successful
     total_messages = sum(r.get("messages_scraped", 0) for r in results)
-    
+
     print(f"\n[SUCCESS] 총 그룹 수: {total_groups}")
     print(f"[SUCCESS] 성공: {successful}")
     print(f"[FAILED] 실패: {failed}")
@@ -81,19 +81,19 @@ def print_results(results: list):
     print("\n" + "-" * 80)
     print("**Detailed Results:**")
     print("-" * 80)
-    
+
     for idx, result in enumerate(results, 1):
         status_icon = "[SUCCESS]" if result.get("success") else "[FAILED]"
         group_name = result.get("group_name", "Unknown")
         messages = result.get("messages_scraped", 0)
         error = result.get("error", "")
-        
+
         print(f"\n{idx}. {status_icon} {group_name}")
         print(f"   메시지: {messages}개")
-        
+
         if error:
             print(f"   [WARNING] 오류: {error}")
-        
+
         if result.get("ai_summary"):
             print(f"   [AI] AI 요약 생성 완료")
 
@@ -178,7 +178,7 @@ async def main():
         print(f"완료된 사이클: {stats.get('completed_cycles', 0)}")
         print(f"총 메시지: {stats.get('total_messages', 0)}")
         print(f"오류 횟수: {stats.get('errors', 0)}")
-        
+
         print("\n[SUCCESS] **Multi-group scraping completed successfully!**\n")
 
         return 0
