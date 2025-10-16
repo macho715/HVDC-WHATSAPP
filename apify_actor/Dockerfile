@@ -1,9 +1,9 @@
 FROM apify/actor-node:20
 USER root
 
-# 패키지 설치
+# 패키지 설치 (devDependencies 포함)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 # 소스 복사 및 빌드
 COPY . ./
