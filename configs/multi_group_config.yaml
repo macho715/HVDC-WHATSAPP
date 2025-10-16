@@ -28,3 +28,10 @@ ai_integration:
   summarize_on_extraction: true
   confidence_threshold: 0.90
 
+apify_fallback:
+  enabled: false  # 원격 폴백을 사용할 경우 true로 설정
+  apify_actor_id: ""  # 예: "user/whatsapp-scraper"
+  apify_token_env: "APIFY_TOKEN"  # .env에 저장된 토큰 키
+  input_overrides: {}
+  timeout_seconds: 120
+
