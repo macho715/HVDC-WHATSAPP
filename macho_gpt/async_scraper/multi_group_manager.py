@@ -5,13 +5,14 @@
 
 import asyncio
 import logging
-from typing import List, Dict, Any, Optional
-from datetime import datetime
 import signal
 import sys
+from dataclasses import asdict, is_dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .group_config import GroupConfig, MultiGroupConfig
 from .async_scraper import AsyncGroupScraper
+from .group_config import GroupConfig, MultiGroupConfig, ScraperSettings
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class MultiGroupManager:
         group_configs: List[GroupConfig],
         max_parallel_groups: int = 5,
         ai_integration: Optional[Dict[str, Any]] = None,
+        scraper_settings: Optional[ScraperSettings] = None,
     ):
         """
         Args:
@@ -41,8 +43,20 @@ class MultiGroupManager:
             ai_integration: AI 통합 설정
         """
         self.group_configs = group_configs
-        self.max_parallel_groups = min(max_parallel_groups, len(group_configs))
-        self.ai_integration = ai_integration or {}
+        self.scraper_settings = (
+            scraper_settings
+            if scraper_settings is not None
+            else ScraperSettings(max_parallel_groups=max_parallel_groups)
+        )
+        self.max_parallel_groups = min(
+            self.scraper_settings.max_parallel_groups, len(group_configs)
+        )
+        if ai_integration is None:
+            self.ai_integration: Dict[str, Any] = {}
+        elif is_dataclass(ai_integration):
+            self.ai_integration = asdict(ai_integration)
+        else:
+            self.ai_integration = dict(ai_integration)
 
         # 스크래퍼 인스턴스들
         self.scrapers: Dict[str, AsyncGroupScraper] = {}
@@ -74,7 +88,12 @@ class MultiGroupManager:
             AsyncGroupScraper: 스크래퍼 인스턴스
         """
         scraper = AsyncGroupScraper(
-            group_config=group_config, ai_integration=self.ai_integration
+            group_config=group_config,
+            chrome_data_dir=self.scraper_settings.chrome_data_dir,
+            headless=self.scraper_settings.headless,
+            timeout=self.scraper_settings.timeout,
+            ai_integration=self.ai_integration,
+            storage_state_path=self.scraper_settings.auth_state_path,
         )
 
         return scraper
@@ -228,7 +247,9 @@ class MultiGroupManager:
         try:
             # 그룹을 배치로 나누어 처리
             for i in range(0, len(self.group_configs), self.max_parallel_groups):
-                batch = self.group_configs[i : i + self.max_parallel_groups]
+                batch_start = i
+                batch_end = i + self.max_parallel_groups
+                batch = self.group_configs[batch_start:batch_end]
 
                 logger.info(
                     f"Processing batch {i//self.max_parallel_groups + 1}: {[g.name for g in batch]}"
@@ -341,6 +362,7 @@ async def main():
     """CLI 실행 예제"""
     import argparse
     import json
+
     from .group_config import MultiGroupConfig
 
     parser = argparse.ArgumentParser(description="Multi-Group WhatsApp Scraper")

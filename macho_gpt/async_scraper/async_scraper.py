@@ -40,6 +40,7 @@ class AsyncGroupScraper:
         headless: bool = True,
         timeout: int = 30000,
         ai_integration: Optional[Dict[str, Any]] = None,
+        storage_state_path: Optional[str] = "auth.json",
     ):
         """
         Args:
@@ -48,12 +49,16 @@ class AsyncGroupScraper:
             headless: 헤드리스 모드 여부
             timeout: 타임아웃 (ms)
             ai_integration: AI 통합 설정
+            storage_state_path: Playwright storage_state 파일 경로
         """
         self.group_config = group_config
         self.chrome_data_dir = chrome_data_dir
         self.headless = headless
         self.timeout = timeout
         self.ai_integration = ai_integration or {}
+        self.storage_state_path = (
+            Path(storage_state_path) if storage_state_path else None
+        )
 
         # Playwright 객체들
         self.playwright = None
@@ -66,6 +71,90 @@ class AsyncGroupScraper:
         self.scraped_messages = set()  # 중복 방지용
 
         logger.info(f"AsyncGroupScraper initialized for group: {group_config.name}")
+
+    def _load_storage_state(self) -> Optional[Dict[str, Any]]:
+        """저장된 인증 상태 로드/Load persisted authentication state."""
+        if not self.storage_state_path:
+            return None
+
+        if not self.storage_state_path.exists():
+            logger.warning(
+                "Storage state file not found for %s: %s",
+                self.group_config.name,
+                self.storage_state_path,
+            )
+            return None
+
+        try:
+            raw_data = json.loads(self.storage_state_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            logger.error(
+                "Invalid JSON in storage state file %s: %s",
+                self.storage_state_path,
+                exc,
+            )
+            return None
+
+        normalized, needs_update = self._normalize_storage_state(raw_data)
+        if normalized is None:
+            logger.error(
+                "Unsupported storage state format for %s",
+                self.storage_state_path,
+            )
+            return None
+
+        if needs_update:
+            try:
+                self.storage_state_path.write_text(
+                    json.dumps(normalized, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                logger.info(
+                    "Normalized storage state file for Playwright compatibility: %s",
+                    self.storage_state_path,
+                )
+            except OSError as exc:
+                logger.warning(
+                    "Failed to update storage state file %s: %s",
+                    self.storage_state_path,
+                    exc,
+                )
+
+        return normalized
+
+    @staticmethod
+    def _normalize_storage_state(
+        raw_data: Any,
+    ) -> tuple[Optional[Dict[str, Any]], bool]:
+        """스토리지 상태 포맷 정규화/Normalize storage_state payload."""
+        needs_update = False
+
+        if isinstance(raw_data, dict):
+            cookies = raw_data.get("cookies", [])
+            origins = raw_data.get("origins", [])
+
+            if isinstance(cookies, dict):
+                cookies = [cookies]
+                needs_update = True
+
+            if cookies is None:
+                cookies = []
+            elif not isinstance(cookies, list):
+                return None, False
+
+            if origins is None:
+                origins = []
+                needs_update = True
+            elif not isinstance(origins, list):
+                origins = []
+                needs_update = True
+
+            return {"cookies": cookies, "origins": origins}, needs_update
+
+        if isinstance(raw_data, list):
+            return {"cookies": raw_data, "origins": []}, True
+
+        return None, False
 
     async def initialize(self) -> None:
         """브라우저 및 컨텍스트 초기화"""
@@ -85,10 +174,25 @@ class AsyncGroupScraper:
             )
 
             # 브라우저 컨텍스트 생성
-            self.context = await self.browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                viewport={"width": 1920, "height": 1080},
-            )
+            storage_state = self._load_storage_state()
+            context_kwargs: Dict[str, Any] = {
+                "user_agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "viewport": {"width": 1920, "height": 1080},
+            }
+
+            if storage_state is not None:
+                context_kwargs["storage_state"] = storage_state
+                logger.info(
+                    "Loaded storage state for group %s from %s",
+                    self.group_config.name,
+                    self.storage_state_path,
+                )
+
+            self.context = await self.browser.new_context(**context_kwargs)
 
             # 새 페이지 생성
             self.page = await self.context.new_page()
@@ -104,7 +208,7 @@ class AsyncGroupScraper:
             )
             raise
 
-    async def wait_for_whatsapp_login(self, timeout: int = 60) -> bool:
+    async def wait_for_whatsapp_login(self, timeout: int = 120) -> bool:
         """
         WhatsApp 로그인 대기
 
@@ -412,7 +516,24 @@ class AsyncGroupScraper:
             await self.initialize()
 
             # WhatsApp 로그인 대기
-            if not await self.wait_for_whatsapp_login():
+            login_success = False
+            max_login_attempts = 2
+            for attempt in range(1, max_login_attempts + 1):
+                if await self.wait_for_whatsapp_login():
+                    login_success = True
+                    break
+
+                if attempt < max_login_attempts:
+                    logger.warning(
+                        "WhatsApp login attempt %s failed for %s. Retrying...",
+                        attempt,
+                        self.group_config.name,
+                    )
+                    await asyncio.sleep(5)
+                    if self.page:
+                        await self.page.reload(wait_until="networkidle")
+
+            if not login_success:
                 logger.error(
                     f"Failed to login to WhatsApp for {self.group_config.name}"
                 )

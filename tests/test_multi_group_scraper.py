@@ -71,12 +71,14 @@ class TestScraperSettings:
             headless=True,
             timeout=30000,
             max_parallel_groups=5,
+            auth_state_path="custom_auth.json",
         )
 
         assert settings.chrome_data_dir == "chrome-data"
         assert settings.headless is True
         assert settings.timeout == 30000
         assert settings.max_parallel_groups == 5
+        assert settings.auth_state_path == "custom_auth.json"
 
     def test_should_raise_error_for_invalid_timeout(self):
         """잘못된 timeout에 대한 오류 테스트"""
@@ -90,6 +92,12 @@ class TestScraperSettings:
 
         with pytest.raises(ValueError, match="max_parallel_groups는 1~10 사이"):
             ScraperSettings(max_parallel_groups=15)  # 10 초과
+
+    def test_should_raise_error_for_blank_auth_state_path(self):
+        """빈 인증 상태 경로 오류 테스트/Ensure blank auth_state_path is rejected."""
+
+        with pytest.raises(ValueError, match="auth_state_path는 비워둘 수 없습니다"):
+            ScraperSettings(auth_state_path="   ")
 
 
 class TestAIIntegrationSettings:
@@ -137,6 +145,7 @@ scraper_settings:
   headless: true
   timeout: 30000
   max_parallel_groups: 3
+  auth_state_path: "tests/state.json"
 
 ai_integration:
   enabled: true
@@ -157,6 +166,7 @@ ai_integration:
             assert config.whatsapp_groups[0].apify_dataset_id == "dataset-1"
             assert config.scraper_settings.timeout == 30000
             assert config.ai_integration.enabled is True
+            assert config.scraper_settings.auth_state_path == "tests/state.json"
 
         finally:
             Path(temp_path).unlink()
@@ -386,6 +396,40 @@ class TestMultiGroupManager:
         assert "Group 1" in manager.scrapers
         assert "Group 2" in manager.scrapers
         assert "Group 3" in manager.scrapers
+
+    @pytest.mark.asyncio
+    async def test_should_pass_scraper_settings_to_async_scraper(
+        self, mock_group_configs
+    ):
+        """스크래퍼 설정 전달 테스트/Ensure scraper settings propagate to AsyncGroupScraper."""
+
+        settings = ScraperSettings(
+            chrome_data_dir="profile-dir",
+            headless=False,
+            timeout=45000,
+            max_parallel_groups=2,
+            auth_state_path="custom_auth.json",
+        )
+
+        with patch(
+            "macho_gpt.async_scraper.multi_group_manager.AsyncGroupScraper"
+        ) as scraper_cls:
+            scraper_instance = AsyncMock()
+            scraper_cls.return_value = scraper_instance
+
+            manager = MultiGroupManager(
+                group_configs=mock_group_configs[:1],
+                scraper_settings=settings,
+            )
+
+            await manager.start_all_scrapers()
+
+        scraper_cls.assert_called_once()
+        kwargs = scraper_cls.call_args.kwargs
+        assert kwargs["chrome_data_dir"] == "profile-dir"
+        assert kwargs["headless"] is False
+        assert kwargs["timeout"] == 45000
+        assert kwargs["storage_state_path"] == "custom_auth.json"
 
     @pytest.mark.asyncio
     async def test_should_run_scrapers_in_parallel(self, mock_group_configs):
