@@ -1,25 +1,25 @@
 {
-  "title": "HVDC WhatsApp – PoC Input",
-  "type": "object",
-  "schemaVersion": 1,
-  "properties": {
-    "allowedGroupIds": {
-      "title": "Allowed Group JIDs (comma-separated)",
-      "type": "string",
-      "description": "예: 1203xxx@g.us,1203yyy@g.us",
-      "editor": "textfield"
-    },
-    "keywordFilter": {
-      "title": "Keyword filter (regex, optional)",
-      "type": "string",
-      "description": "(ETA|gate pass|invoice)",
-      "editor": "textfield"
-    },
-    "forwardToWebhook": {
-      "title": "POST to WEBHOOK_URL",
-      "type": "boolean",
-      "editor": "checkbox",
-      "default": true
+    "title": "HVDC WhatsApp – PoC Input",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "allowedGroupIds": {
+            "title": "Allowed Group JIDs (comma-separated)",
+            "type": "string",
+            "description": "예: 1203xxx@g.us,1203yyy@g.us",
+            "editor": "textfield"
+        },
+        "keywordFilter": {
+            "title": "Keyword filter (regex, optional)",
+            "type": "string",
+            "description": "(ETA|gate pass|invoice)",
+            "editor": "textfield"
+        },
+        "forwardToWebhook": {
+            "title": "POST to WEBHOOK_URL",
+            "type": "boolean",
+            "editor": "checkbox",
+            "default": true
+        }
     }
-  }
 }
