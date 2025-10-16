@@ -18,6 +18,7 @@ class GroupConfig:
     save_file: str
     scrape_interval: int = 60
     priority: str = "MEDIUM"
+    apify_dataset_id: Optional[str] = None
 
     def __post_init__(self) -> None:
         """설정 유효성 검증 / Validate core group configuration."""
@@ -148,6 +149,7 @@ class MultiGroupConfig:
                 save_file=group_data["save_file"],
                 scrape_interval=group_data.get("scrape_interval", 60),
                 priority=group_data.get("priority", "MEDIUM"),
+                apify_dataset_id=group_data.get("apify_dataset_id"),
             )
             groups.append(group)
 

@@ -41,6 +41,23 @@ class TestGroupConfig:
         assert config.scrape_interval == 60
         assert config.priority == "HIGH"
 
+    def test_should_load_apify_dataset_id_from_yaml(self):
+        """GroupConfig에서 apify_dataset_id를 로드할 수 있어야 함"""
+        config = GroupConfig(
+            name="Test Group",
+            save_file="test.json",
+            apify_dataset_id="test_dataset_123"
+        )
+        assert config.apify_dataset_id == "test_dataset_123"
+
+    def test_should_handle_none_apify_dataset_id(self):
+        """apify_dataset_id가 None일 때 처리 테스트"""
+        config = GroupConfig(
+            name="Test Group",
+            save_file="test.json"
+        )
+        assert config.apify_dataset_id is None
+
     def test_should_raise_error_for_invalid_scrape_interval(self):
         """잘못된 scrape_interval에 대한 오류 테스트"""
         with pytest.raises(ValueError, match="scrape_interval은 최소 10초 이상"):
@@ -115,6 +132,42 @@ class TestAIIntegrationSettings:
             AIIntegrationSettings(confidence_threshold=-0.1)  # 0.0 미만
 
 
+class TestApifyFallbackSettings:
+    """ApifyFallbackSettings 클래스 테스트"""
+
+    def test_should_create_apify_settings_with_valid_data(self):
+        """유효한 데이터로 ApifyFallbackSettings 생성 테스트"""
+        settings = ApifyFallbackSettings(
+            enabled=True,
+            actor_id="test_actor",
+            token_env="APIFY_TOKEN",
+            timeout_seconds=300
+        )
+        assert settings.enabled is True
+        assert settings.actor_id == "test_actor"
+        assert settings.token_env == "APIFY_TOKEN"
+        assert settings.timeout_seconds == 300
+
+    def test_should_raise_error_when_enabled_without_actor_id(self):
+        """enabled=True인데 actor_id가 없을 때 오류 테스트"""
+        with pytest.raises(ValueError, match="Apify 폴백이 활성화된 경우 actor_id가 필요합니다"):
+            ApifyFallbackSettings(enabled=True, actor_id=None)
+
+    def test_should_raise_error_for_empty_token_env(self):
+        """빈 token_env에 대한 오류 테스트"""
+        with pytest.raises(ValueError, match="apify_token_env는 비어 있을 수 없습니다"):
+            ApifyFallbackSettings(token_env="")
+
+    def test_should_handle_default_values(self):
+        """기본값으로 ApifyFallbackSettings 생성 테스트"""
+        settings = ApifyFallbackSettings()
+        assert settings.enabled is False
+        assert settings.actor_id is None
+        assert settings.token_env == "APIFY_TOKEN"
+        assert settings.input_overrides == {}
+        assert settings.timeout_seconds is None
+
+
 class TestMultiGroupConfig:
     """MultiGroupConfig 클래스 테스트"""
 
@@ -127,10 +180,12 @@ whatsapp_groups:
     save_file: "test1.json"
     scrape_interval: 60
     priority: "HIGH"
+    apify_dataset_id: "test_dataset_1"
   - name: "Test Group 2"
     save_file: "test2.json"
     scrape_interval: 120
     priority: "MEDIUM"
+    apify_dataset_id: "test_dataset_2"
 
 scraper_settings:
   chrome_data_dir: "chrome-data"
@@ -167,6 +222,10 @@ apify_fallback:
             assert config.apify_fallback.enabled is True
             assert config.apify_fallback.actor_id == "user/example-actor"
             assert config.apify_fallback.timeout_seconds == 45
+            
+            # apify_dataset_id 검증
+            assert config.whatsapp_groups[0].apify_dataset_id == "test_dataset_1"
+            assert config.whatsapp_groups[1].apify_dataset_id == "test_dataset_2"
 
         finally:
             Path(temp_path).unlink()
